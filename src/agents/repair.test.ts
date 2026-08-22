@@ -1,184 +1,156 @@
 /**
- * Validation test for runRepair
- * 
- * Compares output against contracts/repair-run.example.ndjson
+ * Contract validation for the Repair Cat event stream.
+ *
+ *   npm run validate                      # validates the golden fixture
+ *   npm run validate -- .last-run.ndjson  # validates a recorded live run
+ *
+ * This validates against contracts/cat-events.schema.json itself, including
+ * `additionalProperties: false` on every payload. The previous version only
+ * checked that keys existed, which is why a misplaced `attempt` field inside
+ * the TESTING payload passed as green.
+ *
+ * Deliberately does not invoke runRepair: a live run costs an API call and
+ * mutates the demo repo, so recording and validating are separate steps.
  */
 
-import { runRepair } from "./repair";
-import { CatDispatchRequest, CatEvent, isTerminalCatEvent } from "../../contracts/cat-events";
 import fs from "fs";
 import path from "path";
+// The contract schemas declare draft 2020-12, which needs ajv's 2020 build;
+// the default export only understands draft-07.
+import Ajv2020 from "ajv/dist/2020";
+import type { ErrorObject } from "ajv";
+import addFormats from "ajv-formats";
 
-// Load the example ndjson file
-const examplePath = path.join(__dirname, "../../contracts/repair-run.example.ndjson");
-const exampleText = fs.readFileSync(examplePath, "utf-8");
-const exampleEvents: CatEvent[] = exampleText
-  .split("\n")
-  .filter(line => line.trim())
-  .map(line => JSON.parse(line));
+import { CatEvent, isTerminalCatEvent } from "../../contracts/cat-events";
 
-// Create a matching request for the example
-const exampleRequest: CatDispatchRequest = {
-  schema: "mistral.city.cat-dispatch/v1",
-  runId: "repair-auth-001",
-  agent: "repair",
-  systemId: "auth",
-  issue: {
-    id: "auth-session-persistence",
-    type: "failing_test",
-    summary: "Session does not persist after refresh",
-    description: "A logged-in user is returned to the login screen after refreshing the page.",
-    files: ["src/auth/session.ts", "tests/auth/session.test.ts"],
-    reproduction: "Run the authentication test suite and refresh after login.",
-  },
-};
+const contractsDir = path.join(__dirname, "../../contracts");
+const eventSchema = JSON.parse(
+  fs.readFileSync(path.join(contractsDir, "cat-events.schema.json"), "utf-8")
+);
 
-async function validateRepairFlow() {
-  console.log("🧪 Validating runRepair against example.ndjson...\n");
+const target = process.argv[2]
+  ? path.resolve(process.cwd(), process.argv[2])
+  : path.join(contractsDir, "repair-run.example.ndjson");
 
-  const events: CatEvent[] = [];
-  
-  for await (const event of runRepair(exampleRequest)) {
-    events.push(event);
+const ajv = new Ajv2020({ allErrors: true, strict: false });
+addFormats(ajv);
+const compiled = ajv.compile(eventSchema);
+// Wrapped as a plain predicate: ajv types compile() as a type guard, which
+// would narrow a CatEvent to `never` inside the failure branch.
+const isSchemaValid = (data: unknown): boolean => compiled(data) as boolean;
+
+const problems: string[] = [];
+const fail = (message: string) => problems.push(message);
+
+const describe = (errors: ErrorObject[] | null | undefined): string =>
+  (errors ?? [])
+    .map((error) => `${error.instancePath || "/"} ${error.message}`)
+    .join("; ");
+
+function main() {
+  if (!fs.existsSync(target)) {
+    console.error(`✖ No event stream at ${target}`);
+    console.error("  Record one with: npm run repair:live");
+    process.exit(1);
   }
 
-  // Validate sequence
-  console.log("✓ Checking sequence...");
-  for (let i = 0; i < events.length; i++) {
-    if (events[i].sequence !== i) {
-      throw new Error(`Sequence mismatch at index ${i}: expected ${i}, got ${events[i].sequence}`);
+  const events: CatEvent[] = fs
+    .readFileSync(target, "utf-8")
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line, index) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        throw new Error(`Line ${index + 1} of ${target} is not valid JSON`);
+      }
+    });
+
+  console.log(`Validating ${events.length} events from ${path.relative(process.cwd(), target)}\n`);
+
+  if (events.length === 0) fail("Stream is empty");
+
+  // 1. Every event must satisfy the published JSON Schema.
+  events.forEach((event, index) => {
+    if (!isSchemaValid(event)) {
+      fail(`Event ${index} (${event.phase}) violates cat-events.schema.json: ${describe(compiled.errors)}`);
+    }
+  });
+
+  // 2. sequence starts at 0 and increments by exactly 1 (contract rule 2).
+  events.forEach((event, index) => {
+    if (event.sequence !== index) {
+      fail(`Event at index ${index} has sequence ${event.sequence}, expected ${index}`);
+    }
+  });
+
+  // 3. runId is stable for the whole run (contract rule 1).
+  const runIds = new Set(events.map((event) => event.runId));
+  if (runIds.size > 1) {
+    fail(`runId is not stable: ${[...runIds].join(", ")}`);
+  }
+
+  // 4. DISPATCHED is first (contract rule 1).
+  if (events[0] && events[0].phase !== "DISPATCHED") {
+    fail(`First event is ${events[0].phase}, expected DISPATCHED`);
+  }
+
+  // 5. Exactly one terminal event, and it is last (contract rule 4).
+  const terminals = events.filter(isTerminalCatEvent);
+  if (terminals.length !== 1) {
+    fail(`Expected exactly 1 terminal event, found ${terminals.length}`);
+  } else if (!isTerminalCatEvent(events[events.length - 1])) {
+    fail("Terminal event is not the last event in the stream");
+  }
+
+  // 6. SUCCESS only after a passing verification (contract rule 5).
+  const success = events.find((event) => event.phase === "SUCCESS");
+  if (success) {
+    const passingTest = events.some(
+      (event) => event.phase === "TESTING" && event.payload.status === "passed"
+    );
+    if (!passingTest) {
+      fail("SUCCESS emitted without a TESTING event reporting status 'passed'");
+    }
+    if (success.payload.changedFiles.length === 0) {
+      fail("SUCCESS reports no changed files");
     }
   }
-  console.log(`  ✓ Sequence is 0..${events.length - 1} with no gaps\n`);
 
-  // Validate runId is stable
-  console.log("✓ Checking runId stability...");
-  const runIds = new Set(events.map(e => e.runId));
-  if (runIds.size !== 1) {
-    throw new Error(`runId is not stable: found ${runIds.size} different values`);
-  }
-  if (!runIds.has(exampleRequest.runId)) {
-    throw new Error(`runId mismatch: expected ${exampleRequest.runId}, got ${Array.from(runIds)[0]}`);
-  }
-  console.log(`  ✓ runId is stable: ${exampleRequest.runId}\n`);
-
-  // Validate exactly one terminal event
-  console.log("✓ Checking terminal events...");
-  const terminalEvents = events.filter(isTerminalCatEvent);
-  if (terminalEvents.length !== 1) {
-    throw new Error(`Expected exactly 1 terminal event, got ${terminalEvents.length}`);
-  }
-  if (terminalEvents[0].phase !== "SUCCESS") {
-    throw new Error(`Expected SUCCESS terminal event, got ${terminalEvents[0].phase}`);
-  }
-  console.log(`  ✓ Exactly one SUCCESS terminal event\n`);
-
-  // Validate all required fields
-  console.log("✓ Checking required fields...");
-  const requiredFields = ["schema", "runId", "sequence", "emittedAt", "agent", "phase", "systemId", "message"];
-  for (const event of events) {
-    for (const field of requiredFields) {
-      if (!(field in event)) {
-        throw new Error(`Missing required field ${field} in event ${event.sequence}`);
+  // 7. Paths stay repository-relative (contract rule 6).
+  const suspectPath = (file: string) => path.isAbsolute(file) || file.startsWith("../");
+  events.forEach((event, index) => {
+    const payload = event.payload as Record<string, unknown>;
+    for (const key of ["files", "changedFiles"]) {
+      const value = payload?.[key];
+      if (Array.isArray(value)) {
+        value.filter((file): file is string => typeof file === "string")
+          .filter(suspectPath)
+          .forEach((file) => fail(`Event ${index} has non-repository-relative path: ${file}`));
       }
     }
-  }
-  console.log(`  ✓ All required fields present\n`);
+  });
 
-  // Validate phase order matches example
-  console.log("✓ Checking phase order...");
-  const expectedPhases = exampleEvents.map(e => e.phase);
-  const actualPhases = events.map(e => e.phase);
-  
-  if (JSON.stringify(expectedPhases) !== JSON.stringify(actualPhases)) {
-    console.log(`  ⚠️  Phase order differs from example:`);
-    console.log(`    Expected: ${JSON.stringify(expectedPhases)}`);
-    console.log(`    Actual:   ${JSON.stringify(actualPhases)}`);
-    // This is okay for MVP as long as it's logical
-  } else {
-    console.log(`  ✓ Phase order matches example\n`);
+  if (problems.length > 0) {
+    console.error("✖ Contract violations:\n");
+    problems.forEach((problem) => console.error(`  - ${problem}`));
+    console.error(`\n${problems.length} violation(s).`);
+    process.exit(1);
   }
 
-  // Validate schema
-  console.log("✓ Checking schema...");
-  for (const event of events) {
-    if (event.schema !== "mistral.city.cat-event/v1") {
-      throw new Error(`Invalid schema in event ${event.sequence}: ${event.schema}`);
-    }
-  }
-  console.log(`  ✓ All events use correct schema\n`);
-
-  // Validate agent
-  console.log("✓ Checking agent...");
-  for (const event of events) {
-    if (event.agent !== "repair") {
-      throw new Error(`Invalid agent in event ${event.sequence}: ${event.agent}`);
-    }
-  }
-  console.log(`  ✓ All events use repair agent\n`);
-
-  // Validate systemId
-  console.log("✓ Checking systemId...");
-  for (const event of events) {
-    if (event.systemId !== "auth") {
-      throw new Error(`Invalid systemId in event ${event.sequence}: ${event.systemId}`);
-    }
-  }
-  console.log(`  ✓ All events target auth system\n`);
-
-  // Validate payloads by phase
-  console.log("✓ Checking phase-specific payloads...");
-  for (const event of events) {
-    switch (event.phase) {
-      case "DISPATCHED":
-        if (!event.payload?.issue) {
-          throw new Error(`DISPATCHED event ${event.sequence} missing issue in payload`);
-        }
-        break;
-      case "TRAVELING":
-        if (!event.payload?.from || !event.payload?.to) {
-          throw new Error(`TRAVELING event ${event.sequence} missing from/to in payload`);
-        }
-        break;
-      case "INSPECTING":
-        if (!event.payload?.files) {
-          throw new Error(`INSPECTING event ${event.sequence} missing files in payload`);
-        }
-        break;
-      case "ISSUE_FOUND":
-        if (!event.payload?.issue) {
-          throw new Error(`ISSUE_FOUND event ${event.sequence} missing issue in payload`);
-        }
-        break;
-      case "EDITING":
-        if (!event.payload?.changedFiles) {
-          throw new Error(`EDITING event ${event.sequence} missing changedFiles in payload`);
-        }
-        break;
-      case "TESTING":
-        if (!event.payload?.command || !event.payload?.status) {
-          throw new Error(`TESTING event ${event.sequence} missing command/status in payload`);
-        }
-        break;
-      case "SUCCESS":
-        if (!event.payload?.summary || !event.payload?.changedFiles || !event.payload?.verification) {
-          throw new Error(`SUCCESS event ${event.sequence} missing required fields in payload`);
-        }
-        break;
-    }
-  }
-  console.log(`  ✓ All phase-specific payloads are valid\n`);
-
-  // Summary
-  console.log("=" .repeat(60));
-  console.log(`✅ All validations passed!`);
-  console.log(`   Total events: ${events.length}`);
-  console.log(`   Phases: ${actualPhases.join(" → ")}`);
-  console.log(`   Run ID: ${events[0].runId}`);
-  console.log("=" .repeat(60));
+  const phases = events.map((event) => event.phase).join(" → ");
+  console.log("✓ Schema valid for every event");
+  console.log("✓ sequence 0.. with no gaps, stable runId");
+  console.log("✓ DISPATCHED first, exactly one terminal event last");
+  console.log("✓ SUCCESS backed by a passing verification");
+  console.log("✓ All paths repository-relative\n");
+  console.log(`Phases: ${phases}`);
+  console.log(`Result: ${events[events.length - 1]?.phase}`);
 }
 
-validateRepairFlow().catch((error) => {
-  console.error("❌ Validation failed:", error.message);
+try {
+  main();
+} catch (error) {
+  console.error("✖ Validation crashed:", (error as Error).message);
   process.exit(1);
-});
+}
