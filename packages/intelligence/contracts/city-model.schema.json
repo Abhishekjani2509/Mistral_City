@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mistral.city/schemas/city-model-v1.json",
+  "title": "Mistral CityModel v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "repository", "city", "systems", "connections"],
+  "properties": {
+    "schema": { "const": "mistral.city-model/v1" },
+    "repository": { "$ref": "#/$defs/Repository" },
+    "city": { "$ref": "#/$defs/CityHealth" },
+    "systems": { "type": "array", "minItems": 5, "maxItems": 8, "items": { "$ref": "#/$defs/CitySystem" } },
+    "connections": { "type": "array", "items": { "$ref": "#/$defs/CityConnection" } }
+  },
+  "$defs": {
+    "HealthStatus": { "enum": ["healthy", "warning", "broken", "unknown"] },
+    "RelativePath": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!\\.\\.?/)(?![A-Za-z]:[\\\\/]).+" },
+    "Repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "detectedStack", "analyzedAt"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "detectedStack": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "analyzedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "CityHealth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["health", "status"],
+      "properties": {
+        "health": { "type": "number", "minimum": 0, "maximum": 100 },
+        "status": { "$ref": "#/$defs/HealthStatus" }
+      }
+    },
+    "HealthSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "label", "severity", "evidence"],
+      "properties": {
+        "kind": { "enum": ["failing_test", "runtime_error", "build_error", "missing_test", "low_confidence"] },
+        "label": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/RelativePath" }, "uniqueItems": true }
+      }
+    },
+    "CityIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "summary", "description", "files"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["failing_test", "runtime_error", "build_error", "unknown"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/RelativePath" }, "uniqueItems": true },
+        "reproduction": { "type": "string", "minLength": 1 }
+      }
+    },
+    "CitySystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "description", "files", "health", "status", "healthSignals", "issues", "confidence"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "name": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["frontend", "backend", "auth", "api", "database", "external", "tests", "documentation", "unknown"] },
+        "description": { "type": "string", "minLength": 1 },
+        "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/RelativePath" }, "uniqueItems": true },
+        "entrypoints": { "type": "array", "items": { "$ref": "#/$defs/RelativePath" }, "uniqueItems": true },
+        "health": { "type": "number", "minimum": 0, "maximum": 100 },
+        "status": { "$ref": "#/$defs/HealthStatus" },
+        "healthSignals": { "type": "array", "items": { "$ref": "#/$defs/HealthSignal" } },
+        "issues": { "type": "array", "items": { "$ref": "#/$defs/CityIssue" } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "CityConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "from", "to", "kind", "evidence", "confidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "from": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "to": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "kind": { "enum": ["calls", "reads", "writes", "authenticates", "tests", "depends_on"] },
+        "label": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/RelativePath" }, "uniqueItems": true },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

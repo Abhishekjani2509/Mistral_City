@@ -14,13 +14,14 @@
 
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 import { runRepair } from "./repair";
 import { resetRepo } from "./repo";
 import { run } from "./exec";
 import { CatDispatchRequest, CatEvent, isTerminalCatEvent } from "../../contracts/cat-events";
 
-const projectRoot = path.resolve(__dirname, "../..");
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const repoPath = path.join(projectRoot, "demo-repo");
 const outDir = path.join(projectRoot, ".golden");
 
@@ -53,7 +54,7 @@ function buildRequest(index: number): CatDispatchRequest {
 }
 
 async function validateStream(file: string): Promise<boolean> {
-  const result = await run("npx", ["ts-node", "src/agents/repair.test.ts", file], {
+  const result = await run("npx", ["tsx", "src/agents/repair.test.ts", file], {
     cwd: projectRoot,
     timeoutMs: 120_000,
   });

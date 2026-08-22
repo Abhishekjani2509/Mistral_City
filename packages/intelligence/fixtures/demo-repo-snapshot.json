@@ -1,0 +1,55 @@
+{
+  "schema": "mistral.city-model/v1",
+  "repository": {
+    "name": "demo-repo",
+    "detectedStack": ["TypeScript", "React", "Node", "Postgres"],
+    "analyzedAt": "2026-08-22T20:00:00.000Z"
+  },
+  "city": { "health": 84, "status": "warning" },
+  "systems": [
+    {
+      "id": "auth", "name": "Authentication", "kind": "auth",
+      "description": "Handles user login and keeps people signed in.",
+      "files": ["src/auth/session.ts", "src/login.tsx"],
+      "health": 65, "status": "broken", "confidence": 0.94,
+      "healthSignals": [{ "kind": "failing_test", "label": "Session does not persist after refresh", "severity": "error", "evidence": ["tests/auth/session.test.ts"] }],
+      "issues": [{ "id": "auth-failing-test-session-34", "type": "failing_test", "summary": "Session does not persist after refresh", "description": "A logged-in user is returned to the login screen after refreshing.", "files": ["src/auth/session.ts", "tests/auth/session.test.ts"], "reproduction": "Run the authentication tests and refresh after login." }]
+    },
+    {
+      "id": "dashboard", "name": "Dashboard", "kind": "frontend",
+      "description": "Shows people the main view of their activity.",
+      "files": ["src/dashboard/page.tsx", "src/dashboard/widgets.tsx", "src/dashboard/summary.ts"],
+      "entrypoints": ["src/dashboard/page.tsx"], "health": 93, "status": "healthy", "confidence": 0.9, "healthSignals": [], "issues": []
+    },
+    {
+      "id": "database", "name": "Database", "kind": "database",
+      "description": "Stores accounts and application activity safely.",
+      "files": ["src/db/client.ts", "db/schema.sql"], "health": 94, "status": "healthy", "confidence": 0.96, "healthSignals": [], "issues": []
+    },
+    {
+      "id": "notifications", "name": "Notifications", "kind": "external",
+      "description": "Sends people updates when important things happen.",
+      "files": ["src/notifications/send.ts", "src/notifications/templates.ts"], "health": 89, "status": "healthy", "confidence": 0.83, "healthSignals": [], "issues": []
+    },
+    {
+      "id": "search", "name": "Search", "kind": "frontend",
+      "description": "Helps people find the information they need.",
+      "files": ["src/search/query.ts", "src/search/results.tsx"], "health": 86, "status": "unknown", "confidence": 0.48,
+      "healthSignals": [{ "kind": "low_confidence", "label": "This area still needs a deeper review.", "severity": "warning", "evidence": [] }], "issues": []
+    },
+    {
+      "id": "tests", "name": "Test Defences", "kind": "tests",
+      "description": "Checks that the city's most important features keep working.",
+      "files": ["tests/application.test.ts"], "health": 100, "status": "healthy", "confidence": 0.87, "healthSignals": [], "issues": []
+    }
+  ],
+  "connections": [
+    { "id": "auth-database", "from": "auth", "to": "database", "kind": "writes", "evidence": ["src/auth/session.ts"], "confidence": 0.94 },
+    { "id": "auth-dashboard", "from": "auth", "to": "dashboard", "kind": "depends_on", "evidence": ["src/auth/session.ts"], "confidence": 0.9 },
+    { "id": "dashboard-auth", "from": "dashboard", "to": "auth", "kind": "authenticates", "evidence": ["src/dashboard/page.tsx"], "confidence": 0.9 },
+    { "id": "dashboard-database", "from": "dashboard", "to": "database", "kind": "reads", "evidence": ["src/dashboard/page.tsx"], "confidence": 0.9 },
+    { "id": "database-notifications", "from": "database", "to": "notifications", "kind": "calls", "evidence": ["src/db/client.ts"], "confidence": 0.83 },
+    { "id": "search-database", "from": "search", "to": "database", "kind": "reads", "evidence": ["src/search/query.ts"], "confidence": 0.48 },
+    { "id": "tests-auth", "from": "tests", "to": "auth", "kind": "tests", "evidence": ["tests/application.test.ts"], "confidence": 0.87 }
+  ]
+}

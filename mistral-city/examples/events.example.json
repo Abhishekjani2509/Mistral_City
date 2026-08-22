@@ -1,0 +1,15 @@
+[
+  { "t": 0,     "type": "agent.start", "agent": "repair", "target": "auth" },
+  { "t": 3000,  "type": "agent.log",   "level": "code", "text": "reading src/auth/session.ts" },
+  { "t": 4200,  "type": "agent.log",   "level": "code", "text": "reproducing \"session should persist after refresh\"" },
+  { "t": 5400,  "type": "agent.log",   "level": "bad",  "text": "test failed as expected" },
+  { "t": 6600,  "type": "agent.log",   "level": "",     "text": "cause: session held in React state, never written to a cookie" },
+  { "t": 8000,  "type": "agent.edit",  "file": "src/auth/session.ts" },
+  { "t": 9200,  "type": "agent.edit",  "file": "src/auth/guard.ts" },
+  { "t": 10400, "type": "agent.log",   "level": "code", "text": "running: pnpm test authentication" },
+  { "t": 12200, "type": "agent.test",  "suite": "authentication", "pass": 6, "fail": 0 },
+  { "t": 12900, "type": "agent.done",  "target": "auth", "health": 94, "status": "healthy",
+    "summary": "Repair Cat fixed session persistence",
+    "detail": "Sessions are written to a signed cookie now, so refreshing keeps you logged in.",
+    "files": ["src/auth/session.ts", "src/auth/guard.ts"] }
+]

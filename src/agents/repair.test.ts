@@ -15,6 +15,7 @@
 
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 // The contract schemas declare draft 2020-12, which needs ajv's 2020 build;
 // the default export only understands draft-07.
 import Ajv2020 from "ajv/dist/2020";
@@ -23,7 +24,7 @@ import addFormats from "ajv-formats";
 
 import { CatEvent, isTerminalCatEvent } from "../../contracts/cat-events";
 
-const contractsDir = path.join(__dirname, "../../contracts");
+const contractsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../contracts");
 const eventSchema = JSON.parse(
   fs.readFileSync(path.join(contractsDir, "cat-events.schema.json"), "utf-8")
 );

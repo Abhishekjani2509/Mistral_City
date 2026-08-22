@@ -13,6 +13,7 @@
 
 import fs from "fs/promises";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 import {
   CAT_EVENT_SCHEMA,
@@ -47,7 +48,7 @@ export interface RepairOptions {
   vibeTimeoutMs?: number;
 }
 
-const DEFAULT_REPO = path.resolve(__dirname, "../../demo-repo");
+const DEFAULT_REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../demo-repo");
 
 export async function* runRepair(
   request: CatDispatchRequest,

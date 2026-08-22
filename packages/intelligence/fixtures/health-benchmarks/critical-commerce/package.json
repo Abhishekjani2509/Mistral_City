@@ -1,0 +1,6 @@
+{
+  "name": "critical-commerce",
+  "private": true,
+  "scripts": { "test": "vitest --watch", "start": "tsx src/operations/start.ts" },
+  "dependencies": { "express": "latest", "jsonwebtoken": "latest", "pg": "latest", "react": "latest" }
+}

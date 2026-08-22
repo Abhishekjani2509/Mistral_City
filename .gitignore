@@ -1,36 +1,15 @@
-# Dependencies
 node_modules/
-
-# Lock files
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# Build output
 dist/
-.build/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-
-# Environment
 .env
-.env.local
-.env.*.local
-
-# Test coverage
+.env.*
+!.env.example
+.city-intel-cache/
 coverage/
+*.log
+city-model.json
+.DS_Store
+
+# Cat agent runtime artifacts
 .last-run.ndjson
 .golden/
 .golden-log.txt

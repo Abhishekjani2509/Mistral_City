@@ -8,11 +8,12 @@
 
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import { runRepair } from "./repair";
 import { resetRepo } from "./repo";
 import { CatDispatchRequest, isTerminalCatEvent } from "../../contracts/cat-events";
 
-const repoPath = path.resolve(__dirname, "../../demo-repo");
+const repoPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../demo-repo");
 
 const request: CatDispatchRequest = {
   schema: "mistral.city.cat-dispatch/v1",
@@ -50,7 +51,7 @@ async function main() {
 
   // Recorded so `npm run validate -- .last-run.ndjson` can check this exact
   // run against the schema without spending another API call.
-  const recordPath = path.resolve(__dirname, "../../.last-run.ndjson");
+  const recordPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.last-run.ndjson");
   fs.writeFileSync(recordPath, lines.join("\n") + "\n");
 
   const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
