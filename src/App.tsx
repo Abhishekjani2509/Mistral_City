@@ -108,7 +108,7 @@ function App() {
       const request = dispatchFromRenderer(dispatch);
       void dispatchCat(request, (event: CatEvent) => {
         city.current?.onEvent(toRendererEvent(event, rendererModel.current));
-      }).catch((error: unknown) => {
+      }, analysisSessionId.current ?? undefined).catch((error: unknown) => {
         city.current?.onEvent({
           type: "agent.done",
           target: request.systemId,

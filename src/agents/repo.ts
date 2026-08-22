@@ -18,6 +18,12 @@ export interface TestOutcome {
   /** True only when the runner exited 0. */
   ok: boolean;
   timedOut: boolean;
+  /**
+   * The repository defines no such script, so there is nothing to verify
+   * against. Distinct from `!ok`: a failing suite is a repairable signal,
+   * a missing runner means no repair can ever be proven.
+   */
+  missingScript: boolean;
   /** Trimmed tail of the runner output, for FAILED event details. */
   details: string;
 }
@@ -119,6 +125,7 @@ export async function runTests(
     failed,
     ok: result.code === 0 && !result.timedOut,
     timedOut: result.timedOut,
+    missingScript: /Missing script/i.test(result.output),
     details: result.output.trim().slice(-2000),
   };
 }

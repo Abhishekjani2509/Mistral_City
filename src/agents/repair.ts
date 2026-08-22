@@ -137,6 +137,19 @@ export async function* runRepair(
     return;
   }
 
+  // No verification command at all. Bail immediately rather than editing code
+  // whose repair could never be proven - a green cat here would be a lie.
+  if (baseline.missingScript) {
+    yield fail(
+      "ISSUE_NOT_REPRODUCED",
+      "Repair Cat found no way to verify a repair here.",
+      `This repository defines no \`${verifyCommand}\` script, so a fix cannot be proven.`,
+      false,
+      baseline.details
+    );
+    return;
+  }
+
   if (baseline.ok) {
     yield fail(
       "ISSUE_NOT_REPRODUCED",

@@ -6,11 +6,15 @@ const apiOrigin = import.meta.env.VITE_AGENT_API_URL
 export async function dispatchCat(
   request: CatDispatchRequest,
   onEvent: (event: CatEvent) => void,
+  sessionId?: string,
 ): Promise<void> {
+  // sessionId travels alongside the request rather than inside it: the
+  // dispatch schema is closed, and it tells the server which clone the cat
+  // should repair so it edits the code this city was built from.
   const response = await fetch(`${apiOrigin}/api/dispatch-cat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
+    body: JSON.stringify(sessionId ? { ...request, sessionId } : request),
   });
 
   if (!response.ok) {

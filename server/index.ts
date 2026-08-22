@@ -161,8 +161,21 @@ app.post("/api/dispatch-cat", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  // Repair the repository the city was built from, so the cat edits the code
+  // the user is actually looking at. Without a live session it falls back to
+  // the bundled demo repo.
+  const sessionId = typeof req.body?.sessionId === "string" ? req.body.sessionId : "";
+  let repoPath: string | undefined;
+  if (sessionId) {
+    try {
+      repoPath = getAnalysisSession(sessionId).snapshot.root;
+    } catch {
+      // An expired session is not worth failing the dispatch over.
+    }
+  }
+
   try {
-    for await (const event of dispatchCat(request)) {
+    for await (const event of dispatchCat(request, repoPath ? { repoPath } : undefined)) {
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     }
   } catch (error) {

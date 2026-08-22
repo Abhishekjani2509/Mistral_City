@@ -13,3 +13,5 @@ city-model.json
 .last-run.ndjson
 .golden/
 .golden-log.txt
+.bridge-run.ndjson
+.dev-server.log

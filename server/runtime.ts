@@ -1,9 +1,20 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { CatDispatchRequest, CatEvent } from "../contracts/cat-events";
+import { runRepair } from "../src/agents/repair";
+
+export interface CatRuntimeOptions {
+  /**
+   * Repository the cat should repair. Normally the clone made when the city
+   * was analyzed, so the cat edits the codebase the user is looking at.
+   * Falls back to the bundled demo repo when absent.
+   */
+  repoPath?: string;
+}
 
 export type CatRuntime = (
   request: CatDispatchRequest,
+  options?: CatRuntimeOptions,
 ) => AsyncIterable<CatEvent>;
 
 /**
@@ -36,6 +47,17 @@ export const replayRepair: CatRuntime = async function* (request) {
   }
 };
 
-// SWE 3 integration point. Replace this assignment with an adapter around
-// runRepair(request) once the real runtime is available on the branch.
-export const dispatchCat: CatRuntime = replayRepair;
+/**
+ * SWE 3 integration point, now wired to the real Repair Cat.
+ *
+ * runRepair already matches CatRuntime, so no adapter is needed. It repairs
+ * the bundled demo repo by default; pass `repoPath` to point it elsewhere.
+ *
+ * Set CAT_RUNTIME=replay to fall back to the fixture. A real run takes
+ * roughly 20-45s because it runs Mistral and the test suite for real, where
+ * the replay always takes 2s.
+ */
+export const dispatchCat: CatRuntime = (request, options) =>
+  process.env.CAT_RUNTIME === "replay"
+    ? replayRepair(request)
+    : runRepair(request, options?.repoPath ? { repoPath: options.repoPath } : {});
