@@ -156,6 +156,9 @@ button{font-family:inherit}
 .iss.u{background:#EDEFF4;border-left-color:var(--unk)}
 .iss .a{font-size:12px;font-weight:700;line-height:1.3}
 .iss .b{font-size:11px;color:#5C584F;margin-top:2px;line-height:1.4}
+.iss .src{display:inline-flex;align-items:center;gap:4px;margin-top:7px;color:#8B3D22;font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:800;text-decoration:none;overflow-wrap:anywhere}
+.iss .src:hover{text-decoration:underline;color:var(--R)}
+.iss .src:focus-visible{outline:2px solid var(--t);outline-offset:2px}
 .conns{display:flex;flex-wrap:wrap;gap:4px}
 .conn{font-size:10.5px;padding:3px 7px;border:1px solid var(--line);background:var(--paper2);cursor:pointer;font-weight:600}
 .conn:hover{border-color:var(--ink);background:#fff}
@@ -1407,6 +1410,20 @@ export function mountCity(el, opts = {}) {
   function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');
     clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2500)}
 
+  function html(v){return String(v??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c])}
+  function issueSource(i){
+    const source=i&&i.source;
+    if(!source||!source.url||!source.file)return '';
+    try{
+      const url=new URL(source.url);
+      if(url.protocol!=='https:'||url.hostname.toLowerCase()!=='github.com')return '';
+      const where=source.file+(Number.isInteger(source.line)?':'+source.line:'');
+      return `<a class="src" href="${html(url.href)}" target="_blank" rel="noopener noreferrer" aria-label="Open source ${html(where)} on GitHub">Source · ${html(where)} &#8599;</a>`;
+    }catch(_){return ''}
+  }
+
   /* ============================================================
      7. INSPECTOR
      ============================================================ */
@@ -1428,7 +1445,7 @@ export function mountCity(el, opts = {}) {
       <span class="meter"><i style="width:${st==='unknown'?0:s.health}%;background:${col}"></i></span>`;
     h+=`<div class="sec"><h4>What Mistral found</h4>`;
     if(s.issues&&s.issues.length){
-      s.issues.forEach(i=>h+=`<div class="iss ${i.w?'w':''}"><div class="a">${i.t}</div><div class="b">${i.d}</div></div>`);
+      s.issues.forEach(i=>h+=`<div class="iss ${i.w?'w':''}"><div class="a">${html(i.t)}</div><div class="b">${html(i.d)}</div>${issueSource(i)}</div>`);
     } else if(st==='unknown'){
       h+=`<div class="iss u"><div class="a">Nothing yet</div>
         <div class="b">This code has not been read. Send a Scout Cat to map it and lift the fog.</div></div>`;

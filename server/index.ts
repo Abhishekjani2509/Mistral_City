@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   DiskCache,
   MistralClient,
+  analysisIssueSources,
   loadConfig,
   normalizeCityModel,
   replaceSystem,
@@ -14,8 +15,9 @@ import {
 } from "@mistral-city/intelligence";
 import type { AnalysisModel, RepoSnapshot } from "@mistral-city/intelligence";
 import type { CatDispatchRequest, FailedEvent } from "../contracts/cat-events";
+import type { IssueSourceLink } from "../contracts/issue-sources";
 import { dispatchCat } from "./runtime";
-import { cloneGitHubRepository, type RepositoryStreamEvent } from "./repository";
+import { buildGitHubIssueSources, cloneGitHubRepository, type RepositoryStreamEvent } from "./repository";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -27,15 +29,27 @@ app.use(express.json());
 const analysisSessions = new Map<string, {
   snapshot: RepoSnapshot;
   analysis: AnalysisModel;
+  source: { webUrl: string; revision: string };
   expiresAt: number;
 }>();
 const analysisSessionLifetimeMs = 30 * 60 * 1_000;
 
-function saveAnalysisSession(snapshot: RepoSnapshot, analysis: AnalysisModel): string {
+function saveAnalysisSession(
+  snapshot: RepoSnapshot,
+  analysis: AnalysisModel,
+  source: { webUrl: string; revision: string },
+): string {
   pruneAnalysisSessions();
   const id = randomUUID();
-  analysisSessions.set(id, { snapshot, analysis, expiresAt: Date.now() + analysisSessionLifetimeMs });
+  analysisSessions.set(id, { snapshot, analysis, source, expiresAt: Date.now() + analysisSessionLifetimeMs });
   return id;
+}
+
+function issueSourceLinks(
+  analysis: AnalysisModel,
+  source: { webUrl: string; revision: string },
+): IssueSourceLink[] {
+  return buildGitHubIssueSources(analysisIssueSources(analysis), source.webUrl, source.revision);
 }
 
 function getAnalysisSession(id: string) {
@@ -90,7 +104,11 @@ app.post("/api/analyze-repository", async (req, res) => {
       log: (message) => console.log(`[city-intel] ${message}`),
       onAnalysis: (value) => { analysis = value; },
     });
-    if (analysis) send({ type: "analysis.session", data: { id: saveAnalysisSession(snapshot, analysis) } });
+    if (analysis) {
+      const source = { webUrl: repository.webUrl, revision: repository.revision };
+      send({ type: "analysis.sources", data: { sources: issueSourceLinks(analysis, source) } });
+      send({ type: "analysis.session", data: { id: saveAnalysisSession(snapshot, analysis, source) } });
+    }
     send({ type: "city.model", data: model });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -136,6 +154,7 @@ app.post("/api/scout", async (req, res) => {
         summary: `Scout Cat mapped ${revealed.name}.`,
         detail: revealed.plainDescription,
         files: revealed.files,
+        sources: issueSourceLinks(session.analysis, session.source),
       },
     });
   } catch (error) {

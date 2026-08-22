@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { CatEvent } from "../contracts/cat-events";
 import type { CityModel } from "../contracts/city-model";
+import type { IssueSourceLink } from "../contracts/issue-sources";
 import { dispatchCat } from "./api/cat-runtime";
 import { analyzeRepository, type RepositoryEvent } from "./api/repository";
 import { scoutSystem, type ScoutEvent } from "./api/scout";
@@ -21,10 +22,11 @@ function App() {
   const model = useRef<CityModel>(emptyCityModel("GitHub repository"));
   const rendererModel = useRef<RendererModel>(toRendererModel(model.current));
   const analysisSessionId = useRef<string | null>(null);
+  const issueSources = useRef<IssueSourceLink[]>([]);
 
   function publishModel(next: CityModel) {
     model.current = next;
-    rendererModel.current = toRendererModel(next);
+    rendererModel.current = toRendererModel(next, issueSources.current);
     city.current?.setModel(rendererModel.current);
   }
 
@@ -33,9 +35,20 @@ function App() {
       analysisSessionId.current = event.data.id;
       return;
     }
+    if (event.type === "analysis.sources") {
+      issueSources.current = event.data.sources;
+      return;
+    }
     if (event.type === "repository.failed") {
       city.current?.onEvent({ type: "agent.log", level: "bad", text: event.data.message });
       return;
+    }
+    if (event.type === "analysis.complete" && event.data.warnings.length > 0) {
+      city.current?.onEvent({
+        type: "agent.log",
+        level: "sys",
+        text: "Analysis completed with partial results. Some areas remain under fog; you can retry or send Scout Cat after the rate limit clears.",
+      });
     }
     publishModel(applyRepositoryEvent(model.current, event));
   }
@@ -62,6 +75,7 @@ function App() {
           }
 
           if (event.type === "scout.complete") {
+            issueSources.current = event.data.sources;
             city.current?.onEvent({
               type: "agent.done",
               target: event.data.systemId,
@@ -126,6 +140,7 @@ function App() {
     const mounted = mountCity(host.current, {
       onConnect: (url) => {
         analysisSessionId.current = null;
+        issueSources.current = [];
         publishModel(emptyCityModel("GitHub repository"));
         void analyzeRepository(url, handleRepositoryEvent).catch((error: unknown) => {
           city.current?.onEvent({
