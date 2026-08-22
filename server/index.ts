@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import path from "node:path";
 import type { CatDispatchRequest, FailedEvent } from "../contracts/cat-events";
 import { dispatchCat } from "./runtime";
 
@@ -56,7 +57,15 @@ app.post("/api/dispatch-cat", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.resolve(process.cwd(), "dist");
+  app.use(express.static(distPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
+
+app.listen(port, "0.0.0.0", () => {
   console.log(`Mistral City agent bridge listening on http://localhost:${port}`);
   console.log(`CORS allowed origin: ${clientOrigin}`);
 });

@@ -1,6 +1,7 @@
 import type { CatDispatchRequest, CatEvent } from "../../contracts/cat-events";
 
-const apiOrigin = import.meta.env.VITE_AGENT_API_URL ?? "http://localhost:3001";
+const apiOrigin = import.meta.env.VITE_AGENT_API_URL
+  ?? (import.meta.env.DEV ? "http://localhost:3001" : window.location.origin);
 
 export async function dispatchCat(
   request: CatDispatchRequest,
