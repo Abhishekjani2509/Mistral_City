@@ -1,0 +1,32 @@
+{
+  "repo": { "tests": { "pass": 18, "total": 19 } },
+  "city": { "health": 78, "security": { "passed": ["secrets", "deps"] } },
+  "systems": [
+    { "id": "tower", "name": "Town Hall", "kind": "tower", "tx": 24, "ty": 15,
+      "health": 100, "status": "healthy",
+      "blurb": "The repository itself. Its level is how secure this project is.",
+      "connections": ["auth", "api", "docs"] },
+    { "id": "auth", "name": "Authentication", "kind": "gate", "tx": 15, "ty": 16,
+      "health": 64, "status": "broken",
+      "blurb": "Handles logging in and keeping people signed in between visits.",
+      "files": ["src/auth/session.ts", "src/auth/guard.ts"],
+      "connections": ["tower", "db"],
+      "issues": [{ "t": "Session does not survive a refresh",
+                   "d": "authentication.test.ts fails. Sessions live in component state only." }] },
+    { "id": "api", "name": "API Workshop", "kind": "workshop", "tx": 31, "ty": 20,
+      "health": 81, "status": "warning",
+      "blurb": "The server routes the app calls to read and change data.",
+      "files": ["src/app/api/orders/route.ts"], "connections": ["tower", "db"],
+      "issues": [{ "w": 1, "t": "Thin test coverage on /api/cart",
+                   "d": "3 of 9 routes have no test." }] },
+    { "id": "db", "name": "Data Vault", "kind": "vault", "tx": 21, "ty": 24,
+      "health": 95, "status": "healthy", "blurb": "Where orders and users are stored.",
+      "connections": ["api", "auth"] },
+    { "id": "docs", "name": "Library", "kind": "library", "tx": 14, "ty": 10,
+      "health": 70, "status": "warning", "blurb": "How this project works, written down.",
+      "connections": ["tower"] },
+    { "id": "payments", "name": "Unknown ground", "kind": "port", "tx": 34, "ty": 26,
+      "health": 0, "status": "unknown", "blurb": "Nobody has read this part yet.",
+      "connections": ["api"] }
+  ]
+}

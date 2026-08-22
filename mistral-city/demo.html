@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mistral City, module demo</title>
+<style>
+  html,body{margin:0;height:100%;background:#13131C;
+    font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  #city{position:absolute;inset:0}
+
+  /* Every selector is scoped to #dev. The renderer injects its own stylesheet
+     with .row / .acts / .seg in it, and a bare class here loses to it. */
+  #dev{
+    position:fixed;z-index:200;left:50%;top:12px;transform:translateX(-50%);
+    background:#FAF8F4;border:2px solid #13131C;box-shadow:4px 4px 0 rgba(19,19,28,.35);
+    padding:8px 10px 9px;display:flex;flex-direction:column;gap:7px;
+  }
+  #dev .r{display:flex;align-items:center;gap:7px}
+  #dev .r>h3{margin:0;font-size:11px;font-weight:700;color:#13131C;width:74px;flex-shrink:0}
+
+  #dev .seg{display:flex;border:2px solid #13131C;flex-direction:row}
+  #dev .seg>button{
+    border:0;border-right:2px solid #13131C;background:#FAF8F4;color:#13131C;
+    font:inherit;font-size:11.5px;font-weight:700;padding:4px 0;width:28px;cursor:pointer;
+  }
+  #dev .seg>button:last-child{border-right:0}
+  #dev .seg>button:hover{background:#fff}
+  #dev .seg>button[aria-pressed="true"]{background:#EF8934;color:#fff}
+
+  #dev .era{font-size:11px;color:#3A362F;white-space:nowrap}
+  #dev .era b{color:#13131C;font-weight:700}
+
+  #dev .tg{display:flex;flex-direction:row;gap:4px}
+  #dev .tg>button{
+    border:2px solid #13131C;background:#FAF8F4;color:#13131C;
+    font:inherit;font-size:11px;font-weight:600;padding:3px 7px;cursor:pointer;
+    display:flex;flex-direction:row;align-items:center;gap:4px;
+  }
+  #dev .tg>button:hover{background:#fff}
+  #dev .tg>button[aria-pressed="true"]{background:#5B9B3A;color:#fff}
+  #dev .tg svg{width:8px;height:8px;display:block;flex-shrink:0}
+  #dev .tg .no{opacity:.45}
+
+  #dev .ac{display:flex;flex-direction:row;gap:4px}
+  #dev .ac>button{
+    border:2px solid #13131C;background:#FAF8F4;color:#13131C;
+    font:inherit;font-size:11px;font-weight:600;padding:3px 8px;cursor:pointer;
+  }
+  #dev .ac>button:hover{background:#fff}
+  #dev .ac>button.on{background:#13131C;color:#FAF8F4}
+</style>
+</head>
+<body>
+<div id="city"></div>
+
+<div id="dev">
+  <div class="r">
+    <h3>Security level</h3>
+    <div class="seg" id="seg"></div>
+    <span class="era" id="era"></span>
+  </div>
+  <div class="r">
+    <h3>Checks</h3>
+    <div class="tg" id="toggles"></div>
+  </div>
+  <div class="r">
+    <h3>Scene</h3>
+    <div class="ac">
+      <button id="cycle">Cycle levels</button>
+      <button id="reload">Reload model</button>
+      <button id="replay">Replay agent run</button>
+      <button id="zfit">Fit view</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { mountCity } from './city/mistral-city.js'
+
+const city = mountCity(document.getElementById('city'), {
+  onSelect: id => console.log('[app] selected', id)
+})
+window.city = city
+
+const MODEL = {
+  repo:{ tests:{ pass:12, total:14 } },
+  city:{ health:71, security:{ passed:['secrets','deps'] } },
+  systems:[
+    {id:'tower',name:'Town Hall',kind:'tower',tx:24,ty:15,health:100,status:'healthy',
+     blurb:'The repository itself.',connections:['auth','api']},
+    {id:'auth',name:'Authentication',kind:'gate',tx:15,ty:16,health:52,status:'broken',
+     blurb:'Handles logging in and keeping people signed in.',
+     files:['src/auth/session.ts'],connections:['tower'],
+     issues:[{t:'Session does not survive a refresh',d:'stored in component state only'}]},
+    {id:'api',name:'API Workshop',kind:'workshop',tx:31,ty:20,health:84,status:'warning',
+     blurb:'Server routes.',connections:['tower']}
+  ]
+}
+const LOG = [
+  {t:0,    type:'agent.start', agent:'repair', target:'auth'},
+  {t:3000, type:'agent.log',   text:'reading src/auth/session.ts', level:'code'},
+  {t:4200, type:'agent.log',   text:'test failed as expected',     level:'bad'},
+  {t:5600, type:'agent.edit',  file:'src/auth/session.ts'},
+  {t:7000, type:'agent.test',  suite:'authentication', pass:6, fail:0},
+  {t:7600, type:'agent.done',  target:'auth', health:96, status:'healthy',
+           summary:'Repair Cat fixed session persistence',
+           detail:'Signed httpOnly cookie. 96% health.', files:['src/auth/session.ts']}
+]
+
+/* the same pixel tick and cross the inspector draws, so the panel matches */
+const pix = rows => {
+  let r = ''
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] === '#')
+    r += `<rect x="${x}" y="${y}" width="1" height="1" fill="currentColor"/>` })
+  return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges">${r}</svg>`
+}
+const TICK  = pix(['........','......#.','.....##.','#...##..','##.##...','.###....','..#.....','........'])
+const CROSS = pix(['........','.##..##.','..####..','...##...','...##...','..####..','.##..##.','........'])
+/* the check names are a sentence each, too long for a toggle. the id is the handle. */
+const SHORT = { secrets:'secrets', deps:'cves', session:'session', input:'queries', headers:'headers' }
+
+const CHECKS = city.checks()
+const LEVELS = city.levels()
+let passed = new Set(['secrets','deps'])
+
+/* level buttons 1..5 */
+const seg = document.getElementById('seg')
+LEVELS.forEach(l => {
+  const b = document.createElement('button')
+  b.textContent = l.n
+  b.title = `${l.name}, ${l.era}`
+  b.onclick = () => { passed = new Set(CHECKS.slice(0, l.n).map(c => c.id)); push() }
+  seg.appendChild(b)
+})
+
+/* one toggle per real check, so the level can be reached any way round */
+const tg = document.getElementById('toggles')
+CHECKS.forEach(c => {
+  const b = document.createElement('button')
+  b.dataset.id = c.id
+  b.innerHTML = `<span class="i"></span><span>${SHORT[c.id] || c.id}</span>`
+  b.title = c.name
+  b.onclick = () => { passed.has(c.id) ? passed.delete(c.id) : passed.add(c.id); push() }
+  tg.appendChild(b)
+})
+
+function push(){
+  const ids = CHECKS.filter(c => passed.has(c.id)).map(c => c.id)
+  const lv = city.setSecurity(ids)
+  const L = LEVELS[lv - 1]
+  document.getElementById('era').innerHTML = `<b>Level ${lv} ${L.name}</b>, ${L.era.toLowerCase()}`
+  ;[...seg.children].forEach((b, i) => b.setAttribute('aria-pressed', String(i < lv)))
+  ;[...tg.children].forEach(b => {
+    const on = passed.has(b.dataset.id)
+    b.setAttribute('aria-pressed', String(on))
+    const i = b.querySelector('.i')
+    i.innerHTML = on ? TICK : CROSS
+    i.className = on ? 'i' : 'i no'
+  })
+}
+
+let cycling = null
+document.getElementById('cycle').onclick = e => {
+  if (cycling) { clearInterval(cycling); cycling = null; e.target.classList.remove('on'); return }
+  e.target.classList.add('on')
+  let n = 0
+  cycling = setInterval(() => {
+    n = n % 5 + 1
+    passed = new Set(CHECKS.slice(0, n).map(c => c.id))
+    push()
+  }, 1600)
+}
+document.getElementById('reload').onclick = () => { city.setModel(MODEL); push() }
+document.getElementById('replay').onclick = () => city.replay(LOG)
+document.getElementById('zfit').onclick   = () => city.camera({ x: 25*16, y: 18*16, z: 1 })
+
+city.setModel(MODEL)
+push()
+</script>
+</body>
+</html>
