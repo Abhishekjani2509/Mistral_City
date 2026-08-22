@@ -35,13 +35,43 @@ export async function discoverSystems(
     await cache.put(key, result);
   }
   const systems = normalizeSystems(result.systems, snapshot.files);
+  await emitSystems(systems, emit);
+  return { systems, tokens: result.tokens, cached };
+}
+
+/** Produces a useful fogged city when semantic discovery is temporarily unavailable. */
+export async function discoverSystemsLocally(snapshot: RepoSnapshot, emit: EventSink): Promise<DiscoveryResult> {
+  const groups = [
+    { id: "auth", name: "Authentication", description: "Handles login, identity, and user sessions.", buildingType: "gate" as const, match: /(?:^|\/)(?:auth|login|session|identity)/i },
+    { id: "database", name: "Data Storage", description: "Stores and retrieves application information.", buildingType: "vault" as const, match: /(?:^|\/)(?:db|data|database|schema|migration)/i },
+    { id: "tests", name: "Automated Checks", description: "Checks whether important application behavior still works.", buildingType: "guard_tower" as const, match: /(?:test|spec|__tests__)/i },
+    { id: "frontend", name: "Web Interface", description: "Shows the application and handles user interactions.", buildingType: "district" as const, match: /(?:^|\/)(?:src\/)?(?:app|pages|components|frontend|client)|\.tsx$/i },
+    { id: "api", name: "Application API", description: "Receives requests and coordinates application operations.", buildingType: "port" as const, match: /(?:^|\/)(?:api|routes?|server|controllers?)/i },
+    { id: "operations", name: "System Operations", description: "Controls configuration, builds, and deployment behavior.", buildingType: "depot" as const, match: /(?:config|docker|deploy|workflow|package\.json|tsconfig)/i },
+    { id: "documentation", name: "Documentation", description: "Explains how the repository is used and maintained.", buildingType: "library" as const, match: /(?:readme|docs?|\.md$)/i },
+    { id: "core", name: "Application Core", description: "Contains the remaining shared application behavior.", buildingType: "workshop" as const, match: /.*/ },
+  ];
+  const claimed = new Set<string>();
+  const raw = groups.flatMap((group) => {
+    const files = snapshot.files.filter((file) => !claimed.has(file.path) && group.match.test(file.path) && Boolean(claimed.add(file.path))).map((file) => file.path);
+    if (files.length === 0) return [];
+    return [{
+      id: group.id, name: group.name, plainDescription: group.description, buildingType: group.buildingType,
+      files, connections: [], discoveryConfidence: 0.5,
+    }];
+  });
+  const systems = normalizeSystems(raw, snapshot.files);
+  await emitSystems(systems, emit);
+  return { systems, tokens: 0, cached: false };
+}
+
+async function emitSystems(systems: DiscoveredSystem[], emit: EventSink): Promise<void> {
   for (const system of systems) {
     await emit({ type: "system.discovered", data: { id: system.id, name: system.name, kind: inferSystemKind(system), description: system.plainDescription, confidence: system.discoveryConfidence } });
   }
   for (const system of systems) for (const connection of system.connections) {
     await emit({ type: "system.connected", data: { from: system.id, to: connection } });
   }
-  return { systems, tokens: result.tokens, cached };
 }
 
 function discoveryInput(files: RepoFile[], samples: RepoFile[]): string {

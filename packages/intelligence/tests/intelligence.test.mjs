@@ -34,7 +34,9 @@ test("live model configuration pins IDs and gives code analysis enough time", ()
     discoveryModel: "mistral-large-2512", codeModel: "mistral-medium-3-5", smallModel: "mistral-small-2603",
   });
   assert.equal(config.requestTimeoutMs, 30_000);
+  assert.equal(config.maxConcurrentModelCalls, 2);
   assert.throws(() => loadConfig({ smallModel: "mistral-small-latest" }), /explicitly pinned/);
+  assert.throws(() => loadConfig({ maxConcurrentModelCalls: 0 }), /MODEL_CONCURRENCY/);
 });
 
 test("a timed-out Mistral attempt is retried with a fresh timeout", async () => {
@@ -60,6 +62,24 @@ test("a timed-out Mistral attempt is retried with a fresh timeout", async () => 
   });
   assert.equal(attempts, 2);
   assert.equal(result.model, "mistral-small-latest");
+  assert.deepEqual(result.value, { ok: true });
+});
+
+test("a rate-limited Mistral request honors Retry-After and retries", async () => {
+  let attempts = 0;
+  const fetchImpl = async () => {
+    attempts += 1;
+    if (attempts === 1) return new Response(JSON.stringify({ message: "rate limited" }), { status: 429, headers: { "retry-after": "0" } });
+    return new Response(JSON.stringify({
+      model: "mistral-small-2603", choices: [{ message: { content: JSON.stringify({ ok: true }) } }], usage: { total_tokens: 3 },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const client = new MistralClient("test-key", "https://example.invalid/v1", 2, 1_000, fetchImpl);
+  const result = await client.complete({
+    model: "mistral-small-2603", promptVersion: "test-v1", system: "test", user: "test",
+    schemaName: "test_schema", jsonSchema: { type: "object" }, parser: { parse: (value) => value }, maxTokens: 10,
+  });
+  assert.equal(attempts, 2);
   assert.deepEqual(result.value, { ok: true });
 });
 
@@ -137,6 +157,44 @@ test("an unchanged scan is identical and makes zero additional model calls", asy
   assert.equal(second.systems.length, 5);
   assert.ok(second.systems.every((system) => !("quality" in system) && Array.isArray(system.healthSignals)));
   assert.ok(second.connections.every((connection) => second.systems.some((system) => system.id === connection.from) && second.systems.some((system) => system.id === connection.to)));
+});
+
+test("one rate-limited system stays under fog without discarding successful grades", async () => {
+  const collector = new EventCollector();
+  let audit;
+  let analysis;
+  const model = await scanRepository(fixtureRepo(), {
+    client: new OneSystemFailureClient(), cache: new MemoryCache(), emit: collector.sink,
+    onAudit: (value) => { audit = value; }, onAnalysis: (value) => { analysis = value; },
+  });
+  assert.equal(model.systems.length, 5);
+  assert.equal(model.systems.filter((system) => system.status === "unknown").length, 1);
+  assert.equal(model.systems.find((system) => system.id === "system-2").health, 0);
+  assert.equal(analysis.systems.length, 5);
+  assert.equal(audit.outcome, "partial");
+  assert.equal(collector.events.at(-1).type, "analysis.complete");
+  assert.ok(collector.events.at(-1).data.warnings.some((warning) => warning.includes("System 2")));
+});
+
+test("failed semantic discovery produces a local fogged city and completes analysis", async () => {
+  const collector = new EventCollector();
+  let audit;
+  const model = await scanRepository(fixtureRepo(), {
+    client: { async complete() { throw new Error("Mistral API 429: rate limited"); } },
+    cache: new MemoryCache(), emit: collector.sink, onAudit: (value) => { audit = value; },
+  });
+  assert.equal(model.systems.length, 5);
+  assert.ok(model.systems.every((system) => system.status === "unknown"));
+  assert.equal(model.city.status, "unknown");
+  assert.equal(audit.outcome, "partial");
+  assert.ok(collector.events.some((event) => event.type === "system.discovered"));
+  assert.equal(collector.events.at(-1).type, "analysis.complete");
+});
+
+test("model orchestration respects the configured concurrency limit", async () => {
+  const client = new ConcurrentFixtureClient();
+  await scanRepository(fixtureRepo(), { client, cache: new MemoryCache(), config: { maxConcurrentModelCalls: 1 } });
+  assert.equal(client.maximumActive, 1);
 });
 
 test("network failure falls back to the pinned snapshot and preserves fog", async () => {
@@ -307,6 +365,30 @@ class ScoutClient extends FixtureClient {
       }] }, model: request.model, promptVersion: request.promptVersion, tokens: 8,
     };
     return super.complete(request);
+  }
+}
+
+class OneSystemFailureClient extends FixtureClient {
+  async complete(request) {
+    if (request.schemaName === "code_quality_grades" && JSON.parse(request.user).system.id === "system-2") {
+      throw new Error("Mistral API 429: rate limited");
+    }
+    return super.complete(request);
+  }
+}
+
+class ConcurrentFixtureClient extends FixtureClient {
+  active = 0;
+  maximumActive = 0;
+  async complete(request) {
+    this.active += 1;
+    this.maximumActive = Math.max(this.maximumActive, this.active);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      return await super.complete(request);
+    } finally {
+      this.active -= 1;
+    }
   }
 }
 

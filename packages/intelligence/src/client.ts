@@ -29,6 +29,13 @@ interface MistralResponse {
   model?: string;
 }
 
+class MistralHttpError extends Error {
+  constructor(readonly status: number, message: string, readonly retryAfterMs?: number) {
+    super(message);
+    this.name = "MistralHttpError";
+  }
+}
+
 export class MistralClient implements IntelligenceModelClient {
   constructor(
     private readonly apiKey: string,
@@ -63,7 +70,13 @@ export class MistralClient implements IntelligenceModelClient {
           }),
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error(`Mistral API ${response.status}: ${await response.text()}`);
+        if (!response.ok) {
+          throw new MistralHttpError(
+            response.status,
+            `Mistral API ${response.status}: ${await response.text()}`,
+            parseRetryAfter(response.headers.get("retry-after")),
+          );
+        }
         const body = await response.json() as MistralResponse;
         const content = body.choices?.[0]?.message?.content;
         const text = typeof content === "string"
@@ -80,8 +93,8 @@ export class MistralClient implements IntelligenceModelClient {
         lastError = isAbortError(error)
           ? new Error(`Mistral request timed out after ${timeoutMs}ms on attempt ${attempt + 1}/${this.retries}`)
           : error;
-        const backoff = 250 * 2 ** attempt;
-        if (attempt + 1 < this.retries) await delay(backoff);
+        if (attempt + 1 < this.retries && isRetryable(error)) await delay(retryDelay(error, attempt));
+        else break;
       } finally {
         clearTimeout(timer);
       }
@@ -92,6 +105,25 @@ export class MistralClient implements IntelligenceModelClient {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
+}
+
+function isRetryable(error: unknown): boolean {
+  if (isAbortError(error)) return true;
+  if (error instanceof MistralHttpError) return error.status === 408 || error.status === 409 || error.status === 429 || error.status >= 500;
+  return error instanceof TypeError && /fetch/i.test(error.message);
+}
+
+function retryDelay(error: unknown, attempt: number): number {
+  if (error instanceof MistralHttpError && error.status === 429) return error.retryAfterMs ?? Math.min(8_000, 2_000 * 2 ** attempt);
+  return Math.min(2_000, 250 * 2 ** attempt);
+}
+
+function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000;
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? undefined : Math.max(0, date - Date.now());
 }
 
 function delay(ms: number): Promise<void> {

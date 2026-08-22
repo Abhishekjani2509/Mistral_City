@@ -37,6 +37,13 @@ function App() {
       city.current?.onEvent({ type: "agent.log", level: "bad", text: event.data.message });
       return;
     }
+    if (event.type === "analysis.complete" && event.data.warnings.length > 0) {
+      city.current?.onEvent({
+        type: "agent.log",
+        level: "sys",
+        text: "Analysis completed with partial results. Some areas remain under fog; you can retry or send Scout Cat after the rate limit clears.",
+      });
+    }
     publishModel(applyRepositoryEvent(model.current, event));
   }
 

@@ -6,6 +6,7 @@ export interface IntelligenceConfig {
   smallModel: string;
   requestTimeoutMs: number;
   retries: number;
+  maxConcurrentModelCalls: number;
   cacheDir: string;
   demoMode: boolean;
 }
@@ -21,6 +22,7 @@ export function loadConfig(overrides: Partial<IntelligenceConfig> = {}): Intelli
     // Twelve seconds was shorter than healthy code-model responses in calibration.
     requestTimeoutMs: Number(process.env.CITY_INTEL_TIMEOUT_MS ?? 30_000),
     retries: 3,
+    maxConcurrentModelCalls: Number(process.env.CITY_INTEL_MODEL_CONCURRENCY ?? 2),
     cacheDir: process.env.CITY_INTEL_CACHE_DIR ?? ".city-intel-cache",
     demoMode: process.env.CITY_INTEL_DEMO_MODE === "1",
     ...overrides,
@@ -28,6 +30,9 @@ export function loadConfig(overrides: Partial<IntelligenceConfig> = {}): Intelli
   for (const model of [config.discoveryModel, config.codeModel, config.smallModel]) assertPinnedModel(model);
   if (!Number.isFinite(config.requestTimeoutMs) || config.requestTimeoutMs < 1_000) {
     throw new Error("CITY_INTEL_TIMEOUT_MS must be a finite number of at least 1000ms");
+  }
+  if (!Number.isInteger(config.maxConcurrentModelCalls) || config.maxConcurrentModelCalls < 1 || config.maxConcurrentModelCalls > 8) {
+    throw new Error("CITY_INTEL_MODEL_CONCURRENCY must be an integer from 1 to 8");
   }
   return config;
 }
