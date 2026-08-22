@@ -23,6 +23,11 @@ export interface ScanOptions {
   log?: (message: string) => void;
   mode?: "live" | "mock" | "injected";
   onAudit?: (audit: AnalysisRunAudit) => void;
+  /**
+   * Delivers the private, evidence-rich analysis for trusted server-side
+   * follow-up actions such as Scout. This must never be sent to the renderer.
+   */
+  onAnalysis?: (analysis: AnalysisModel) => void | Promise<void>;
 }
 
 export interface AnalysisRunAudit {
@@ -61,6 +66,7 @@ export async function scanRepository(snapshot: RepoSnapshot, options: ScanOption
     const health = cityHealth(systems);
     const analysis: AnalysisModel = { city: { health, schemaVersion: "1.0.0" }, systems, warnings };
     const model = normalizeCityModel(snapshot, analysis);
+    await options.onAnalysis?.(structuredClone(analysis));
     options.log?.(`Tier histogram: ${JSON.stringify(tierHistogram(systems))}`);
     await emit({ type: "city.health", data: { value: health } });
     await emit({ type: "analysis.complete", data: { cityHealth: health, systemCount: systems.length, warnings } });

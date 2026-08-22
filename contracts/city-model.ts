@@ -67,7 +67,6 @@ export interface CityModel {
   city: {
     health: number;
     status: HealthStatus;
-    energy: number;
   };
   systems: CitySystem[];
   connections: CityConnection[];

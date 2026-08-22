@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mistral City · module demo</title>
+<style>
+  html,body{margin:0;height:100%;background:#13131C;font-family:system-ui,sans-serif}
+  #city{position:absolute;inset:0}
+  #bar{position:fixed;z-index:200;left:12px;bottom:12px;display:flex;gap:6px}
+  #bar button{border:2px solid #13131C;background:#FAF8F4;font-weight:700;font-size:12px;padding:7px 11px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="city"></div>
+<div id="bar">
+  <button id="load">setModel</button>
+  <button id="run">agent events</button>
+  <button id="lvl">setSecurity(5)</button>
+</div>
+<script type="module">
+import { mountCity } from './city/mistral-city.js'
+
+const city = mountCity(document.getElementById('city'), {
+  onSelect: id => console.log('[app] selected', id)
+})
+window.city = city
+
+const MODEL = {
+  repo:{ tests:{ pass:12, total:14 } },
+  city:{ health:71, security:{ passed:['secrets','deps'] } },
+  systems:[
+    {id:'tower',name:'Town Hall',kind:'tower',tx:24,ty:15,health:100,status:'healthy',
+     blurb:'The repository itself.',connections:['auth','api']},
+    {id:'auth',name:'Authentication',kind:'gate',tx:15,ty:16,health:52,status:'broken',
+     blurb:'Handles logging in and keeping people signed in.',
+     files:['src/auth/session.ts'],connections:['tower'],
+     issues:[{t:'Session does not survive a refresh',d:'stored in component state only'}]},
+    {id:'api',name:'API Workshop',kind:'workshop',tx:31,ty:20,health:84,status:'warning',
+     blurb:'Server routes.',connections:['tower']}
+  ]
+}
+const LOG = [
+  {t:0,    type:'agent.start', agent:'repair', target:'auth'},
+  {t:3000, type:'agent.log',   text:'reading src/auth/session.ts', level:'code'},
+  {t:4200, type:'agent.log',   text:'test failed as expected',     level:'bad'},
+  {t:5600, type:'agent.edit',  file:'src/auth/session.ts'},
+  {t:7000, type:'agent.test',  suite:'authentication', pass:6, fail:0},
+  {t:7600, type:'agent.done',  target:'auth', health:96, status:'healthy',
+           summary:'Repair Cat fixed session persistence',
+           detail:'Signed httpOnly cookie. 96% health.', files:['src/auth/session.ts']}
+]
+document.getElementById('load').onclick = () => city.setModel(MODEL)
+document.getElementById('run').onclick  = () => city.replay(LOG)
+document.getElementById('lvl').onclick  = () => city.setSecurity(['secrets','deps','session','input','headers'])
+city.setModel(MODEL)
+</script>
+</body>
+</html>

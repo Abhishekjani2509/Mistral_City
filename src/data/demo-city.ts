@@ -19,7 +19,6 @@ export const DEMO_CITY: CityModel = {
   city: {
     health: 78,
     status: "warning",
-    energy: 120,
   },
   systems: [
     {

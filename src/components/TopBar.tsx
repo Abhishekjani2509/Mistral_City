@@ -13,7 +13,7 @@ export function TopBar({ city }: TopBarProps) {
       </div>
       <div className="topbar-stats">
         <span><strong>{city.city.health}%</strong> city health</span>
-        <span><strong>{city.city.energy}</strong> energy</span>
+        <span><strong>{city.systems.length}</strong> systems</span>
         <span className="connection-pill"><i /> agent bridge online</span>
       </div>
     </header>
