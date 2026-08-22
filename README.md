@@ -27,7 +27,7 @@ MISTRAL_API_KEY=... npm run city-intel -- scan /path/to/repo --fresh
 
 `--fresh` bypasses the disk cache, records every model call, and fails the command unless it sees one semantic-discovery pass, one Devstral code-quality pass per system, one Mistral Small deployment pass per system, and one Mistral Small plain-English pass per system that has verified issues. The audit is written to stderr; stdout remains a pure `mistral.city-model/v1` JSON object. A normal unchanged scan can legitimately finish quickly with zero model calls because the cache is part of the determinism requirement.
 
-Live calls have a 30-second end-to-end deadline with up to three retries. All model IDs must be explicitly pinned; `*-latest` overrides are rejected before the scan begins.
+Each live attempt has a 30-second deadline and a timed-out attempt is retried up to three times with backoff. All requested model IDs must be explicitly pinned; `*-latest` overrides are rejected before the scan begins. The API may report an alias for a pinned request, and the audit displays both values when they differ.
 
 Run the deliberately vulnerable local fixture without an API key:
 

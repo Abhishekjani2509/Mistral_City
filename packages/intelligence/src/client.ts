@@ -35,18 +35,17 @@ export class MistralClient implements IntelligenceModelClient {
     private readonly apiBase = "https://api.mistral.ai/v1",
     private readonly retries = 3,
     private readonly defaultTimeoutMs = 12_000,
+    private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
   async complete<T>(request: CompletionRequest<T>): Promise<CompletionResult<T>> {
     let lastError: unknown;
-    const deadline = Date.now() + (request.timeoutMs ?? this.defaultTimeoutMs);
+    const timeoutMs = request.timeoutMs ?? this.defaultTimeoutMs;
     for (let attempt = 0; attempt < this.retries; attempt += 1) {
-      const remaining = deadline - Date.now();
-      if (remaining <= 0) break;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), remaining);
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const response = await fetch(`${this.apiBase.replace(/\/$/, "")}/chat/completions`, {
+        const response = await this.fetchImpl(`${this.apiBase.replace(/\/$/, "")}/chat/completions`, {
           method: "POST",
           headers: { authorization: `Bearer ${this.apiKey}`, "content-type": "application/json" },
           body: JSON.stringify({
@@ -78,15 +77,21 @@ export class MistralClient implements IntelligenceModelClient {
           tokens: body.usage?.total_tokens ?? 0,
         };
       } catch (error) {
-        lastError = error;
+        lastError = isAbortError(error)
+          ? new Error(`Mistral request timed out after ${timeoutMs}ms on attempt ${attempt + 1}/${this.retries}`)
+          : error;
         const backoff = 250 * 2 ** attempt;
-        if (attempt + 1 < this.retries && Date.now() + backoff < deadline) await delay(backoff);
+        if (attempt + 1 < this.retries) await delay(backoff);
       } finally {
         clearTimeout(timer);
       }
     }
     throw lastError instanceof Error ? lastError : new Error("Mistral request timed out");
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
 }
 
 function delay(ms: number): Promise<void> {

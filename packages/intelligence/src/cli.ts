@@ -82,7 +82,10 @@ async function readReport(path: string): Promise<CityModel> { return validateCit
 function printAudit(audit: AnalysisRunAudit): void {
   const successful = audit.modelCalls.filter((call) => call.succeeded).length;
   process.stderr.write(`[city-intel] analysis audit: mode=${audit.mode} outcome=${audit.outcome} modelCalls=${successful}/${audit.modelCalls.length} cacheHits=${audit.cache.hits} cacheMisses=${audit.cache.misses} elapsedMs=${audit.elapsedMs}\n`);
-  for (const call of audit.modelCalls) process.stderr.write(`[city-intel] model ${call.succeeded ? "ok" : "failed"}: ${call.model} ${call.schemaName} ${call.elapsedMs}ms ${call.tokens} tokens\n`);
+  for (const call of audit.modelCalls) {
+    const resolved = call.responseModel ? ` (API response: ${call.responseModel})` : "";
+    process.stderr.write(`[city-intel] model ${call.succeeded ? "ok" : "failed"}: ${call.model}${resolved} ${call.schemaName} ${call.elapsedMs}ms ${call.tokens} tokens\n`);
+  }
 }
 
 function assertFreshOrchestration(audit: AnalysisRunAudit | undefined, model: CityModel): void {

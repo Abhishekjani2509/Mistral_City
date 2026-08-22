@@ -30,7 +30,7 @@ export interface AnalysisRunAudit {
   outcome: "complete" | "fallback" | "failed";
   elapsedMs: number;
   cache: { hits: number; misses: number; writes: number };
-  modelCalls: Array<{ model: string; promptVersion: string; schemaName: string; elapsedMs: number; tokens: number; succeeded: boolean }>;
+  modelCalls: Array<{ model: string; responseModel?: string; promptVersion: string; schemaName: string; elapsedMs: number; tokens: number; succeeded: boolean }>;
 }
 
 export async function scanRepository(snapshot: RepoSnapshot, options: ScanOptions = {}): Promise<CityModel> {
@@ -85,7 +85,15 @@ function auditedClient(client: IntelligenceModelClient, audit: AnalysisRunAudit)
       const startedAt = Date.now();
       try {
         const result = await client.complete(request);
-        audit.modelCalls.push({ model: result.model, promptVersion: request.promptVersion, schemaName: request.schemaName, elapsedMs: Date.now() - startedAt, tokens: result.tokens, succeeded: true });
+        audit.modelCalls.push({
+          model: request.model,
+          ...(result.model !== request.model ? { responseModel: result.model } : {}),
+          promptVersion: request.promptVersion,
+          schemaName: request.schemaName,
+          elapsedMs: Date.now() - startedAt,
+          tokens: result.tokens,
+          succeeded: true,
+        });
         return result;
       } catch (error) {
         audit.modelCalls.push({ model: request.model, promptVersion: request.promptVersion, schemaName: request.schemaName, elapsedMs: Date.now() - startedAt, tokens: 0, succeeded: false });

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   EventCollector,
   MemoryCache,
+  MistralClient,
   calibrateAuthenticationAcceptance,
   enforceConsistency,
   gradeSystem,
@@ -32,6 +33,32 @@ test("live model configuration pins IDs and gives code analysis enough time", ()
   });
   assert.equal(config.requestTimeoutMs, 30_000);
   assert.throws(() => loadConfig({ smallModel: "mistral-small-latest" }), /explicitly pinned/);
+});
+
+test("a timed-out Mistral attempt is retried with a fresh timeout", async () => {
+  let attempts = 0;
+  const fetchImpl = async (_url, init) => {
+    attempts += 1;
+    if (attempts === 1) {
+      return await new Promise((_resolve, reject) => {
+        init.signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+      });
+    }
+    return new Response(JSON.stringify({
+      model: "mistral-small-latest",
+      choices: [{ message: { content: JSON.stringify({ ok: true }) } }],
+      usage: { total_tokens: 3 },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const parser = { parse: (value) => value };
+  const client = new MistralClient("test-key", "https://example.invalid/v1", 2, 5, fetchImpl);
+  const result = await client.complete({
+    model: "mistral-small-2506", promptVersion: "test-v1", system: "test", user: "test",
+    schemaName: "test_schema", jsonSchema: { type: "object" }, parser, maxTokens: 10,
+  });
+  assert.equal(attempts, 2);
+  assert.equal(result.model, "mistral-small-latest");
+  assert.deepEqual(result.value, { ok: true });
 });
 
 test("Authentication hero delta lands at 65 and rises above 90", () => {
