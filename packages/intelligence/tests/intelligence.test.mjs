@@ -6,6 +6,7 @@ import {
   calibrateAuthenticationAcceptance,
   enforceConsistency,
   gradeSystem,
+  loadConfig,
   loadDemoSnapshot,
   normalizeSystems,
   OWASP_WSTG_50,
@@ -24,6 +25,14 @@ const bestQuality = {
   deployment: { tier: "forged", confidence: 1, rationale: "Configuration is externalized.", findingIds: [] },
   modularity: { tier: "well_walled", confidence: 1, rationale: "Interfaces are narrow.", findingIds: [] },
 };
+
+test("live model configuration pins IDs and gives code analysis enough time", () => {
+  const config = loadConfig({
+    discoveryModel: "mistral-large-2512", codeModel: "devstral-2512", smallModel: "mistral-small-2506",
+  });
+  assert.equal(config.requestTimeoutMs, 30_000);
+  assert.throws(() => loadConfig({ smallModel: "mistral-small-latest" }), /explicitly pinned/);
+});
 
 test("Authentication hero delta lands at 65 and rises above 90", () => {
   const beforeQuality = {
