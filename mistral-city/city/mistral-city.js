@@ -1327,6 +1327,14 @@ export function mountCity(el, opts = {}) {
     return Math.max(1,Math.min(5, base + ((sv-base)>off ? 1 : 0)));
   }
   function hallLevel(){ return Math.max(1,Math.min(5,Math.round(S.scoreShown))); }
+  /* grid placement that always lands inside the board, whatever MW and MH are */
+  const AP_COLS=4, AP_MX=5, AP_MY=8, AP_STEPY=7;
+  const AP_STEPX=Math.max(5,Math.floor((MW-AP_MX*2)/(AP_COLS-1)));
+  const AP_ROWS=Math.max(1,Math.floor((MH-AP_MY-3)/AP_STEPY)+1);
+  function autoPlace(i){
+    const c=i%AP_COLS, r=Math.floor(i/AP_COLS)%AP_ROWS;
+    return { tx:Math.min(MW-3,AP_MX+c*AP_STEPX), ty:Math.min(MH-4,AP_MY+r*AP_STEPY) };
+  }
   function setScore(v){
     const nv=Math.max(1,Math.min(5,Number(v)||1));
     if(Math.abs(nv-S.score)<0.0005) return nv;
@@ -2322,10 +2330,17 @@ export function mountCity(el, opts = {}) {
       const shouldFit=!S.systems.some(sys=>sys.id!=='tower')&&json.systems.some(sys=>sys.id!=='tower');
       S.systems.forEach(x=>{ if(x.fxTimer) clearInterval(x.fxTimer) });
       S.systems=[]; S.cats=[]; S.scaffolds=[]; S.fx=[]; S.live={}; S.busy={}; deselect();
+      /* CityModel deliberately carries no layout, so in the real app every
+         system lands here. The old fallback hardcoded a 52 wide board and put
+         anything past the fourth system off the edge once the map shrank, so
+         it is derived from MW and MH now. The hall keeps the centre: the
+         upgrade wave radiates from it. */
+      let slot=0;
       MODEL.systems=json.systems.map((sys,i)=>({
         id:sys.id, name:sys.name||sys.id,
         kind:KINDS.includes(sys.kind)?sys.kind:'house',
-        tx:sys.tx!=null?sys.tx:12+(i%6)*6, ty:sys.ty!=null?sys.ty:10+Math.floor(i/6)*7,
+        tx:sys.tx!=null?sys.tx:(sys.kind==='tower'?HALLX:autoPlace(slot).tx),
+        ty:sys.ty!=null?sys.ty:(sys.kind==='tower'?HALLY:autoPlace(slot++).ty),
         health:sys.health!=null?sys.health:100,
         status:sys.status||'healthy',
         blurb:sys.blurb||'', files:sys.files||[], connections:sys.connections||[],
