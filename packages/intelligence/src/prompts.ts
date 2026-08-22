@@ -1,13 +1,13 @@
-export const DISCOVER_VERSION = "discover-v1";
-export const GRADE_CODE_VERSION = "grade-code-v1";
+export const DISCOVER_VERSION = "discover-v2";
+export const GRADE_CODE_VERSION = "grade-code-v2";
 export const GRADE_DEPLOYMENT_VERSION = "grade-deployment-v1";
-export const PLAIN_VERSION = "plain-v1";
+export const PLAIN_VERSION = "plain-v2";
 export const GUARD_VERSION = "guard-v1";
 export const SCOUT_VERSION = "scout-v1";
 
 export const DISCOVER_PROMPT = `You decompose a TypeScript/React/Node/Postgres repository into 5–8 user-meaningful semantic systems, never folders. Use only supplied evidence. Map every file at most once; unmapped files are allowed. Connections require an import, API call, or shared model. Use only the supplied building type enum. Write one-sentence, jargon-free descriptions. Confidence below 0.55 means the system remains under fog.`;
 
-export const GRADE_CODE_PROMPT = `Return independent security, scalability, and modularity grades. Findings are ground truth. Every finding must cite an exact supplied file, a one-based line that exists, and a verbatim snippet from that line. Do not invent evidence. Do not cluster in the middle. If there is no relevant surface, use the best tier, no findings, and say so.
+export const GRADE_CODE_PROMPT = `Return independent security, scalability, and modularity grades. Findings are ground truth. Every finding must cite an exact supplied file, a one-based line that exists, and a verbatim snippet from that line. Do not invent evidence. Return only distinct, high-impact defects: never restate the same evidence across dimensions. Each technical description must state the concrete broken behavior and consequence, not a vague future risk. Do not cluster in the middle. If there is no relevant surface, use the best tier, no findings, and say so.
 
 security · fortified: inputs validated at every boundary, authorization checked on privileged actions, no secrets in source, errors don't leak internals. breachable: defences exist but are inconsistent — some paths validated, some not; overly broad permissions; outdated dependencies. undefended: a concrete exploitable weakness — injection path, missing authz on a privileged action, hardcoded credential, unsanitized deserialization.
 
@@ -19,7 +19,7 @@ export const GRADE_DEPLOYMENT_PROMPT = `Grade deployment only. Every finding mus
 
 deployment · forged: config externalized, health checks present, migrations reversible, structured logging, deterministic build. sputtering: ships with friction — partly hardcoded config, manual steps, thin logging, forward-only migrations. cold_forge: cannot be safely deployed — environment values baked into source, no way to observe failure, destructive irreversible migration.`;
 
-export const PLAIN_PROMPT = `Rewrite every issue for a person who cannot read code. Use present tense and one short sentence. Describe a user-visible consequence or the risk. Do not use file paths, function names, acronyms, or implementation mechanisms. Return exactly one sentence per issue id.`;
+export const PLAIN_PROMPT = `Rewrite every issue for a person who cannot read code. Use present tense and one short sentence. State what is broken and the concrete user-visible consequence or risk. Never use generic wording such as "less reliable over time", "could break", or "needs review". Do not use file paths, function names, acronyms, or implementation mechanisms. Return exactly one sentence per issue id.`;
 
 export const GUARD_PROMPT = `Find up to six important untested behaviours. Explain why each matters in plain English. Cite only supplied files. Rank by blast radius multiplied by current health risk, highest first.`;
 

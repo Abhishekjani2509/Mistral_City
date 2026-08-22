@@ -34,7 +34,11 @@ export async function discoverSystems(
     result = { systems: completion.value.systems, tokens: completion.tokens };
     await cache.put(key, result);
   }
-  const systems = normalizeSystems(result.systems, snapshot.files);
+  const confidenceCap = snapshot.coverage?.truncated ? 0.5 : 1;
+  const systems = normalizeSystems(result.systems, snapshot.files).map((system) => ({
+    ...system,
+    discoveryConfidence: Math.min(system.discoveryConfidence, confidenceCap),
+  }));
   for (const system of systems) {
     await emit({ type: "system.discovered", data: { id: system.id, name: system.name, kind: inferSystemKind(system), description: system.plainDescription, confidence: system.discoveryConfidence } });
   }

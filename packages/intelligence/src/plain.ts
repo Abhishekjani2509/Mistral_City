@@ -1,9 +1,8 @@
 const TECHNICAL_MARKERS = [
   /[`]/,
   /\b[\w/-]+\.(?:ts|tsx|js|jsx|sql|json|yaml|yml)\b/i,
-  /\b[A-Z]{2,}\b/,
   /\b\w+\(\)/,
-  /\b(?:function|class|component|variable|database query|endpoint|middleware)\b/i,
+  /\b(?:function|class|component|variable|middleware)\b/i,
 ];
 
 export function ensurePlainEnglish(candidate: string, fallback: string): string {

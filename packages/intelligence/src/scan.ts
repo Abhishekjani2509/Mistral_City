@@ -62,7 +62,15 @@ export async function scanRepository(snapshot: RepoSnapshot, options: ScanOption
       return graded;
     });
     const systems = (await Promise.all(gradedPromises)).sort((a, b) => a.id.localeCompare(b.id));
-    const warnings = histogramWarnings(systems);
+    const warnings = [
+      ...histogramWarnings(systems),
+      ...(snapshot.coverage?.truncated
+        ? [`Analysis sampled ${snapshot.coverage.loadedFiles} of at least ${snapshot.coverage.candidateFiles} relevant files; unexplored systems remain fogged.`]
+        : []),
+      ...(snapshot.coverage?.skippedLargeFiles
+        ? [`Skipped ${snapshot.coverage.skippedLargeFiles} oversized files while analyzing source.`]
+        : []),
+    ];
     const health = cityHealth(systems);
     const analysis: AnalysisModel = { city: { health, schemaVersion: "1.0.0" }, systems, warnings };
     const model = normalizeCityModel(snapshot, analysis);

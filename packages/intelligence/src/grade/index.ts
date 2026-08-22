@@ -13,6 +13,7 @@ import { verifyFindings } from "../verify.js";
 
 const codeGradesSchema = z.object({ security: rawGradeSchema, scalability: rawGradeSchema, modularity: rawGradeSchema });
 const plainResponseSchema = z.object({ issues: z.array(z.object({ id: z.string(), plainDescription: z.string().min(1) })) });
+const MAX_RENDERED_ISSUES = 3;
 
 export interface GradeSystemOptions {
   client: IntelligenceModelClient; cache: CacheStore; codeModel: string; smallModel: string;
@@ -63,7 +64,8 @@ export async function gradeSystem(system: DiscoveredSystem, options: GradeSystem
       .sort((a, b) => severityValue(b.severity) * b.confidence - severityValue(a.severity) * a.confidence || a.id.localeCompare(b.id))
       .slice(0, 6);
   }
-  const allRawVerified = (Object.keys(verifiedByDimension) as Dimension[]).flatMap((dimension) => verifiedByDimension[dimension].findings);
+  const allRawVerified = dedupeFindings((Object.keys(verifiedByDimension) as Dimension[])
+    .flatMap((dimension) => verifiedByDimension[dimension].findings));
   const plain = await plainDescriptions(system, allRawVerified, files, options);
   const quality = {} as QualityBlock;
   const issues: Finding[] = [];
@@ -80,11 +82,14 @@ export async function gradeSystem(system: DiscoveredSystem, options: GradeSystem
     issues.push(...consistent.findings);
   }
   const hardSignals = options.hardSignals ?? {};
+  const uniqueIssues = dedupeFindings(issues);
+  // Scoring retains every verified dimension-specific finding. The renderer
+  // receives a compact, deduplicated explanation of that score below.
   const health = systemHealth(quality, hardSignals, issues);
   const deeplyAnalyzed = options.deeplyAnalyzed ?? true;
   return {
     ...system, health, status: systemStatus(health, issues, hardSignals, system.discoveryConfidence, deeplyAnalyzed),
-    issues: issues.sort((a, b) => a.id.localeCompare(b.id)), quality, deeplyAnalyzed,
+    issues: uniqueIssues.slice(0, MAX_RENDERED_ISSUES), quality, deeplyAnalyzed,
     // All component results have been persisted before the system is emitted. Keeping
     // this artifact-level flag stable makes unchanged scans byte-deterministic.
     modelRun: { model: options.codeModel, promptVersion: GRADE_CODE_VERSION, tokens: code.tokens + deployment.tokens + plain.tokens, cached: true },
@@ -131,6 +136,20 @@ function gradeInput(system: DiscoveredSystem, files: RepoFile[], characterBudget
 
 function contextualVersion(version: string, context?: string): string { return context ? `${version}:${context}` : version; }
 function severityValue(severity: Finding["severity"]): number { return { info: 0, minor: 1, major: 2, critical: 3 }[severity]; }
+
+function dedupeFindings(findings: Finding[]): Finding[] {
+  const unique = new Map<string, Finding>();
+  for (const finding of findings) {
+    const key = `${finding.file}\0${finding.line}\0${finding.evidence.trim().replace(/\s+/g, " ")}`;
+    const current = unique.get(key);
+    if (!current || severityValue(finding.severity) > severityValue(current.severity)
+      || (finding.severity === current.severity && finding.confidence > current.confidence)) {
+      unique.set(key, finding);
+    }
+  }
+  return [...unique.values()].sort((a, b) => severityValue(b.severity) - severityValue(a.severity)
+    || b.confidence - a.confidence || a.id.localeCompare(b.id));
+}
 
 function verifyFailingTests(
   systemId: string,

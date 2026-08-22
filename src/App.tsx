@@ -35,9 +35,31 @@ function App() {
     }
     if (event.type === "repository.failed") {
       city.current?.onEvent({ type: "agent.log", level: "bad", text: event.data.message });
+      city.current?.onEvent({ type: "city.loading", message: `Analysis failed: ${event.data.message}` });
       return;
     }
-    publishModel(applyRepositoryEvent(model.current, event));
+    model.current = applyRepositoryEvent(model.current, event);
+    rendererModel.current = toRendererModel(model.current);
+
+    if (event.type === "city.model") {
+      publishModel(event.data);
+      city.current?.onEvent({ type: "city.ready" });
+      return;
+    }
+
+    let message: string | undefined;
+    switch (event.type) {
+      case "repository.started": message = "Checking the GitHub repository…"; break;
+      case "repository.cloned": message = `Repository cloned: ${event.data.name}`; break;
+      case "analysis.started": message = "Mistral is mapping systems and dependencies…"; break;
+      case "system.discovered": message = `Found ${event.data.name}…`; break;
+      case "system.graded": message = "Checking the health of each system…"; break;
+      case "analysis.complete": message = "Laying roads and building the city…"; break;
+    }
+    if (message) city.current?.onEvent({ type: "city.loading", message });
+    if (event.type === "analysis.complete") {
+      for (const warning of event.data.warnings) city.current?.onEvent({ type: "agent.log", level: "bad", text: warning });
+    }
   }
 
   useEffect(() => {
@@ -127,6 +149,7 @@ function App() {
       onConnect: (url) => {
         analysisSessionId.current = null;
         publishModel(emptyCityModel("GitHub repository"));
+        city.current?.onEvent({ type: "city.loading", message: "Preparing an empty city…" });
         void analyzeRepository(url, handleRepositoryEvent).catch((error: unknown) => {
           city.current?.onEvent({
             type: "agent.log",

@@ -7,7 +7,7 @@ export type CityRenderer = {
   setSecurity(passedIds: string[]): number | undefined;
   select(id: string): void;
   deselect(): void;
-  camera(options: { x?: number; y?: number; z?: number }): void;
+  camera(options: { x?: number; y?: number }): void;
   on(name: "select", callback: (id: string) => void): void;
   state(): { health: number; energy: number; systems: number };
   destroy(): void;

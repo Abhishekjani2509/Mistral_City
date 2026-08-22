@@ -44,7 +44,12 @@ function snippetMatches(line: string, evidence: string): boolean {
 function normalize(path: string): string { return path.replace(/^\.\//, "").replaceAll("\\", "/"); }
 
 function fallbackPlainDescription(finding: RawFinding): string {
-  if (finding.severity === "critical") return "This can cause the feature to fail or put users at risk.";
-  if (finding.severity === "major") return "This part could break in an important situation.";
-  return "This could make the feature less reliable over time.";
+  const specific = finding.technicalDescription
+    .replace(/^WSTG-[A-Z]+-\d+:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (specific) return /[.!?]$/.test(specific) ? specific : `${specific}.`;
+  return finding.severity === "critical"
+    ? "A confirmed weakness can expose people or their data."
+    : "Mistral found a specific weakness that needs review.";
 }

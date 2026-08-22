@@ -118,6 +118,21 @@ test("semantic normalization enforces 5–8 systems and unique file ownership", 
   assert.equal(new Set(assigned).size, assigned.length);
 });
 
+test("snapshotter includes nested Java/Maven code and marks a fair sampled scan as incomplete", async () => {
+  const root = new URL("../fixtures/nested-java-repo", import.meta.url).pathname;
+  const complete = await snapshotRepository(root);
+  assert.ok(complete.files.some((file) => file.path.endsWith("CoreService.java")));
+  assert.ok(complete.files.some((file) => file.path.endsWith("ApiController.java")));
+  assert.ok(complete.files.some((file) => file.path === "pom.xml"));
+  assert.equal(complete.coverage.truncated, false);
+
+  const sampled = await snapshotRepository(root, 3);
+  assert.equal(sampled.coverage.truncated, true);
+  assert.equal(sampled.files.length, 3);
+  assert.ok(sampled.files.some((file) => file.path === "pom.xml"));
+  assert.ok(new Set(sampled.files.map((file) => file.path.split("/")[0])).size >= 2);
+});
+
 test("an unchanged scan is identical and makes zero additional model calls", async () => {
   const client = new FixtureClient();
   const cache = new MemoryCache();

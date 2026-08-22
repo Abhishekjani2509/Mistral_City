@@ -75,8 +75,7 @@ button{font-family:inherit}
 #p-city{overflow:hidden;background:#4E7233}
 
 /* ---------- world ---------- */
-#stage{position:absolute;inset:0;overflow:hidden;cursor:grab}
-#stage.drag{cursor:grabbing}
+#stage{position:absolute;inset:0;overflow:hidden;cursor:default}
 #stage.aim{cursor:crosshair}
 #cv{position:absolute;left:0;top:0}
 
@@ -97,6 +96,8 @@ button{font-family:inherit}
 .res>div{display:flex;flex-direction:column;gap:1px}
 .res .v{font-family:"Silkscreen",monospace;font-size:13px}
 .res .k{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:800}
+.energy-note{margin-top:8px;padding-top:7px;border-top:1px solid var(--line);font-size:9px;line-height:1.35;color:var(--mute)}
+.energy-note b{color:var(--t)}
 
 #h-legend{right:14px;top:14px;padding:9px 11px}
 .lg{display:flex;align-items:center;gap:7px;font-size:11px;padding:2px 0;color:var(--mute)}
@@ -198,6 +199,16 @@ button{font-family:inherit}
     #4E7233;
   transition:opacity .5s}
 #connect.gone{opacity:0;pointer-events:none}
+#loading{position:absolute;inset:0;z-index:78;display:grid;place-items:center;opacity:0;pointer-events:none;
+  background:linear-gradient(rgba(19,19,28,.82),rgba(19,19,28,.82)),#4E7233;transition:opacity .25s}
+#loading.on{opacity:1;pointer-events:auto}
+.loadbox{width:min(390px,calc(100% - 28px));padding:18px;text-align:center}
+.loadbox h2{margin:7px 0 5px;color:var(--ink);font-size:21px;letter-spacing:-.02em}
+.loadbox p{margin:0;color:var(--mute);font-size:12px;line-height:1.45}
+.loadmark{display:flex;justify-content:center;gap:4px;margin:13px 0 0}
+.loadmark i{width:9px;height:9px;background:var(--t);animation:loadhop .8s steps(2) infinite}
+.loadmark i:nth-child(2){animation-delay:.16s;background:var(--o)}.loadmark i:nth-child(3){animation-delay:.32s;background:var(--y)}
+@keyframes loadhop{50%{transform:translateY(-5px)}}
 #repo-label{display:block;margin:0 0 5px;color:var(--mute);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 #repo-url{display:block;width:100%;border:2px solid var(--ink);background:var(--paper);color:var(--ink);padding:9px 10px;font:12px "JetBrains Mono",monospace;outline:0}
 #repo-url:focus{border-color:var(--t);box-shadow:0 0 0 2px #E75D2E33}
@@ -216,8 +227,6 @@ button{font-family:inherit}
 #toast{position:absolute;left:50%;top:16px;transform:translateX(-50%) translateY(-12px);z-index:70;
   padding:8px 13px;font-size:12px;font-weight:700;opacity:0;transition:all .25s;pointer-events:none}
 #toast.on{opacity:1;transform:translateX(-50%)}
-#zc{position:absolute;right:14px;bottom:270px;z-index:40;display:flex;flex-direction:column;gap:4px}
-#zc .btn{width:28px;height:28px;padding:0;font-size:13px}
 #hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;font-size:10.5px;
   color:#EDEAE2;background:rgba(19,19,28,.72);padding:4px 10px;font-weight:600;letter-spacing:.02em}
 
@@ -237,10 +246,11 @@ const CITY_HTML = `
       <div class="big"><span id="chp">--</span><small id="chd"></small></div>
       <span class="meter"><i id="cmeter" style="width:0%"></i></span>
       <div class="res">
-        <div><span class="v" id="r-energy">120</span><span class="k">Energy</span></div>
+        <div><span class="v" id="r-energy">100</span><span class="k">Energy</span></div>
         <div><span class="v" id="r-know">4</span><span class="k">Knowledge</span></div>
         <div><span class="v" id="r-tests">18/19</span><span class="k">Tests</span></div>
       </div>
+      <div class="energy-note"><b>Mistral wind</b> <span id="r-energy-note">recharges +10 every 30s</span><br>Game cooldown only; API usage is separate.</div>
     </div>
 
     <div class="hud card" id="h-legend">
@@ -258,12 +268,7 @@ const CITY_HTML = `
       <div id="logb"></div>
     </div>
 
-    <div id="zc">
-      <button class="btn" id="zin">+</button>
-      <button class="btn" id="zout">&minus;</button>
-      <button class="btn" id="zfit">&#9633;</button>
-    </div>
-    <div id="hint">drag to pan &middot; scroll to zoom &middot; click a building</div>
+    <div id="hint">arrow keys to pan &middot; click a building</div>
 
     <aside class="card" id="ins">
       <div class="ih"><button class="x" id="ix">&times;</button>
@@ -273,6 +278,12 @@ const CITY_HTML = `
     </aside>
 
     <div id="toast" class="card"></div>
+
+    <div id="loading" aria-live="polite" aria-busy="true">
+      <div class="loadbox card"><span class="lbl">Mistral City</span><h2>Building your codebase</h2>
+        <p id="loading-message">Preparing the city…</p><div class="loadmark"><i></i><i></i><i></i></div>
+      </div>
+    </div>
 
     <div id="connect">
       <div class="cbox card">
@@ -566,7 +577,7 @@ export function mountCity(el, opts = {}) {
 
   const MODEL = {
     repo:{name:'mistral-shop', tests:{pass:18,total:19}},
-    city:{energy:120, knowledge:4},
+    city:{energy:100, knowledge:4},
     systems:[
       {id:'tower',name:'Town Hall',kind:'tower',tx:24,ty:15,health:100,status:'healthy',level:2,
        passed:['secrets','deps'],
@@ -608,8 +619,8 @@ export function mountCity(el, opts = {}) {
        files:[],connections:['api'],issues:[]}
     ],
     huts:[
-      {id:'h-scout',kind:'hut',agent:'scout',tx:14,ty:8},
-      {id:'h-repair',kind:'hut',agent:'repair',tx:26,ty:8}
+      {id:'h-scout',kind:'hut',agent:'scout',tx:3,ty:29},
+      {id:'h-repair',kind:'hut',agent:'repair',tx:45,ty:29}
     ]
   };
 
@@ -633,21 +644,45 @@ export function mountCity(el, opts = {}) {
   const TS=16, MW=52, MH=36;
   const map=[];           // 0 grass, 1 dirt path, 2 dark grass, 3 flowers, 4 water
   function rnd(s){let x=Math.sin(s)*10000;return x-Math.floor(x)}
-  for(let y=0;y<MH;y++){map[y]=[];for(let x=0;x<MW;x++){
-    const n=rnd(x*7.3+y*13.1);
-    map[y][x]= n>0.93?3 : n>0.72?2 : 0;
-  }}
+  function resetTerrain(){
+    map.length=0;
+    for(let y=0;y<MH;y++){map[y]=[];for(let x=0;x<MW;x++){
+      const n=rnd(x*7.3+y*13.1);
+      map[y][x]= n>0.93?3 : n>0.72?2 : 0;
+    }}
+  }
   function carve(ax,ay,bx,by){
     let x=ax,y=ay;
     while(x!==bx){map[y][x]=1;x+=x<bx?1:-1}
     while(y!==by){map[y][x]=1;y+=y<by?1:-1}
     map[y][x]=1;
   }
-  [...MODEL.systems,...MODEL.huts].forEach(s=>{ if(s.id!=='tower') carve(24,17,s.tx,s.ty+1) });
-  /* a pond, because stardew */
-  for(let y=28;y<34;y++)for(let x=6;x<16;x++){
-    const d=Math.hypot((x-11)/5,(y-31)/2.6); if(d<1)map[y][x]=4;
+  const CITY_HUB={tx:26,ty:18};
+  const CITY_SLOTS=[
+    {tx:12,ty:10},{tx:20,ty:8},{tx:33,ty:8},{tx:41,ty:11},
+    {tx:40,ty:22},{tx:31,ty:26},{tx:18,ty:26},{tx:10,ty:21}
+  ];
+  function hashText(value){let h=2166136261;for(let i=0;i<value.length;i++)h=Math.imul(h^value.charCodeAt(i),16777619);return h>>>0}
+  function layoutSystems(systems,repoName){
+    const sortedSlots=[...CITY_SLOTS].sort((a,b)=>hashText(repoName+a.tx+':'+a.ty)-hashText(repoName+b.tx+':'+b.ty));
+    const movable=systems.filter(s=>s.kind!=='tower').sort((a,b)=>hashText(repoName+a.id)-hashText(repoName+b.id)||a.id.localeCompare(b.id));
+    const placement=new Map(movable.map((s,i)=>[s.id,sortedSlots[i%sortedSlots.length]]));
+    return systems.map(s=>{
+      const spot=s.kind==='tower'?{tx:24,ty:15}:placement.get(s.id)||CITY_SLOTS[0];
+      return {...s,tx:spot.tx,ty:spot.ty};
+    });
   }
+  function rebuildRoads(){
+    resetTerrain();
+    carve(3,CITY_HUB.ty,48,CITY_HUB.ty);
+    carve(CITY_HUB.tx,4,CITY_HUB.tx,32);
+    [...MODEL.systems,...MODEL.huts].forEach(s=>{if(s.id!=='tower')carve(CITY_HUB.tx,CITY_HUB.ty,s.tx,s.ty+1)});
+    /* a pond, because stardew */
+    for(let y=28;y<34;y++)for(let x=6;x<16;x++){
+      const d=Math.hypot((x-11)/5,(y-31)/2.6); if(d<1&&map[y][x]!==1)map[y][x]=4;
+    }
+  }
+  rebuildRoads();
 
   /* tile art */
   function tileSprite(kind,seed){
@@ -1114,8 +1149,16 @@ export function mountCity(el, opts = {}) {
     cv.style.width=S.vw+'px'; cv.style.height=S.vh+'px';
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.imageSmoothingEnabled=false;
+    clampCamera();
   }
   WIN('resize',resize); resize();
+
+  function clampCamera(){
+    const halfW=S.vw/(2*S.cam.z), halfH=S.vh/(2*S.cam.z);
+    const worldW=MW*TS, worldH=MH*TS;
+    S.cam.x=worldW<=halfW*2?worldW/2:Math.max(halfW,Math.min(worldW-halfW,S.cam.x));
+    S.cam.y=worldH<=halfH*2?worldH/2:Math.max(halfH,Math.min(worldH-halfH,S.cam.y));
+  }
 
   function sysAt(id){return S.systems.find(s=>s.id===id)}
   function sprFor(s){
@@ -1177,7 +1220,8 @@ export function mountCity(el, opts = {}) {
         ctx.globalAlpha=.45; ctx.fillStyle=AGENTS[h.agent].accent;
         ctx.fillRect(px+2*z,py+1*z,(sp.width-4)*z,8*z); ctx.globalAlpha=1;
         const c=CATS[h.agent].sit;
-        if(!S.busy['agent-'+h.agent]) ctx.drawImage(c,px+(sp.width+2)*z,py+(sp.height-c.height-1)*z,c.width*z,c.height*z);
+        const catX=h.agent==='scout'?px-(c.width+4)*z:px+(sp.width+4)*z;
+        if(!S.busy['agent-'+h.agent]) ctx.drawImage(c,catX,py+(sp.height-c.height-1)*z,c.width*z,c.height*z);
         labelSm(AGENTS[h.agent].verb.toUpperCase(),px+sp.width*z/2,py-3,z,AGENTS[h.agent].accent);
       }});
     });
@@ -1276,6 +1320,7 @@ export function mountCity(el, opts = {}) {
   }
 
   function drawBuilding(s,a,ox,oy,z){
+    if(s.growDelay>0){s.growDelay--;return}
     let spr = sprFor(s);
     const px=Math.round(ox+(a.x-spr.width/2)*z), py=Math.round(oy+(a.y-spr.height)*z);
     const dim = S.selected && S.selected.id!==s.id && !(S.selected.connections||[]).includes(s.id);
@@ -1381,7 +1426,25 @@ export function mountCity(el, opts = {}) {
     }));
   }
   const $=id=>document.getElementById(id);
-  function setEnergy(v){S.energy=v;$('r-energy').textContent=v}
+  const ENERGY_MAX=100, ENERGY_RESERVE=10, ENERGY_REFILL=10, ENERGY_REFILL_MS=30_000;
+  function setEnergy(v){S.energy=Math.max(ENERGY_RESERVE,Math.min(ENERGY_MAX,v));$('r-energy').textContent=S.energy}
+  function updateEnergyNote(){
+    const remaining=Math.max(0,Math.ceil((S.nextEnergyAt-Date.now())/1000));
+    const seconds=String(remaining%60).padStart(2,'0');
+    $('r-energy-note').textContent=S.energy>=ENERGY_MAX?'is full':`recharges +${ENERGY_REFILL} in 00:${seconds}`;
+  }
+  function startEnergyCollector(){
+    S.nextEnergyAt=Date.now()+ENERGY_REFILL_MS;
+    S.energyTimer=setInterval(()=>{
+      const now=Date.now();
+      if(now>=S.nextEnergyAt){
+        setEnergy(S.energy+ENERGY_REFILL); S.nextEnergyAt=now+ENERGY_REFILL_MS;
+        if(S.energy<ENERGY_MAX)toast(`Mistral wind collected +${ENERGY_REFILL} energy.`);
+      }
+      updateEnergyNote();
+    },1_000);
+    updateEnergyNote();
+  }
   function setKnow(v){S.knowledge=v;$('r-know').textContent=v}
   function setTests(){$('r-tests').textContent=S.tp+'/'+S.tt}
   function computeHealth(){
@@ -1406,6 +1469,16 @@ export function mountCity(el, opts = {}) {
   }
   function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');
     clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2500)}
+  let loadingTimer;
+  function showLoading(message){
+    clearTimeout(loadingTimer);
+    $('loading-message').textContent=message||'Preparing the city…';
+    $('loading').classList.add('on');
+  }
+  function hideLoading(){
+    clearTimeout(loadingTimer);
+    loadingTimer=setTimeout(()=>$('loading').classList.remove('on'),350);
+  }
 
   /* ============================================================
      7. INSPECTOR
@@ -1541,8 +1614,12 @@ export function mountCity(el, opts = {}) {
 
   function pathTiles(a,b){
     /* walk along the dirt: L-shaped through the tower crossroads */
-    const via={x:24*TS+8,y:17*TS};
+    const via={x:CITY_HUB.tx*TS+TS/2,y:CITY_HUB.ty*TS+TS};
     return [{x:a.x,y:a.y},{x:a.x,y:via.y},{x:b.x,y:via.y},{x:b.x,y:b.y}];
+  }
+  function hutCatPoint(hut){
+    const x=hut.tx*TS+TS/2, y=hut.ty*TS+TS-1;
+    return {x:x+(hut.agent==='scout'?-22:22),y};
   }
   function moveCat(cat,pts,ms,done){
     const segs=[];let total=0;
@@ -1564,7 +1641,7 @@ export function mountCity(el, opts = {}) {
   function dispatch(agentKey,target){
     if(S.busy[target.id])return toast('A cat is already working there.');
     const a=AGENTS[agentKey];
-    if(S.energy<a.cost)return toast('Not enough energy. Ship something first.');
+    if(S.energy-a.cost<ENERGY_RESERVE)return toast('Mistral wind is recharging. A 10-energy Scout reserve stays available.');
     if(agentKey==='repair'&&(target.status==='healthy'||target.status==='unknown'))
       return toast(target.status==='unknown'?'Scout it first.':'Nothing is broken there.');
 
@@ -1584,7 +1661,7 @@ export function mountCity(el, opts = {}) {
     if(S.selected&&S.selected.id===target.id)renderIns(target);
 
     const hut=MODEL.huts.find(h=>h.agent===agentKey);
-    const start={x:hut.tx*TS+TS+14,y:hut.ty*TS+TS};
+    const start=hutCatPoint(hut);
     const cat={agent:agentKey,x:start.x,y:start.y,dir:1,state:'walk',
                say:agentKey==='repair'?'on it':'let me look',
                sayUntil:S.tick+120};
@@ -1630,13 +1707,12 @@ export function mountCity(el, opts = {}) {
 
     cat.state='walk';
     const hut=MODEL.huts.find(h=>h.agent===agentKey);
-    const home={x:hut.tx*TS+TS+14,y:hut.ty*TS+TS};
+    const home=hutCatPoint(hut);
     moveCat(cat,pathTiles({x:cat.x,y:cat.y},home),2400/speed,()=>{
       S.cats=S.cats.filter(c=>c!==cat); delete S.busy['agent-'+agentKey];
     });
     delete S.busy[target.id];
     const after=computeHealth(); setHealth(after,after-before);
-    setEnergy(S.energy+5);
     if(S.selected&&S.selected.id===target.id)renderIns(target);
   }
 
@@ -1688,34 +1764,21 @@ export function mountCity(el, opts = {}) {
     const auth=()=>MODEL.systems.find(s=>s.id==='auth');
     setTimeout(()=>{select(auth());panTo(auth());toast('Every building is a real system in the repo.')},5000);
     setTimeout(()=>dispatch('repair',auth()),8000);
-    setTimeout(()=>{deselect();S.cam.z=1.5;toast('Mistral changed the repo. The city followed.')},25500);
+    setTimeout(()=>{deselect();toast('Mistral changed the repo. The city followed.')},25500);
   });
 
   /* ============================================================
      10. CAMERA + INPUT
      ============================================================ */
-  function panTo(s){const a=anchor(s);S.cam.x=a.x;S.cam.y=a.y-a.h/2}
-  let drag=false,moved=false,last={x:0,y:0};
-  stage.addEventListener('pointerdown',e=>{
-    if(e.target.closest('.hud,#ins,#connect,#zc'))return;
-    drag=true;moved=false;last={x:e.clientX,y:e.clientY};stage.classList.add('drag');
-    stage.setPointerCapture(e.pointerId);
-  });
+  function panTo(s){const a=anchor(s);S.cam.x=a.x;S.cam.y=a.y-a.h/2;clampCamera()}
   stage.addEventListener('pointermove',e=>{
     const r=cv.getBoundingClientRect();
-    if(drag){
-      const dx=e.clientX-last.x,dy=e.clientY-last.y;
-      if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
-      S.cam.x-=dx/S.cam.z; S.cam.y-=dy/S.cam.z; last={x:e.clientX,y:e.clientY};
-    } else {
-      const hit=pick(e.clientX-r.left,e.clientY-r.top);
-      S.systems.forEach(s=>s.hover=(hit&&hit.id===s.id));
-      stage.style.cursor = S.armed?'crosshair':hit?'pointer':'grab';
-    }
+    const hit=pick(e.clientX-r.left,e.clientY-r.top);
+    S.systems.forEach(s=>s.hover=(hit&&hit.id===s.id));
+    stage.style.cursor = S.armed?'crosshair':hit?'pointer':'default';
   });
-  WIN('pointerup',()=>{drag=false;stage.classList.remove('drag')});
   stage.addEventListener('click',e=>{
-    if(moved||e.target.closest('.hud,#ins,#connect,#zc'))return;
+    if(e.target.closest('.hud,#ins,#connect'))return;
     const r=cv.getBoundingClientRect();
     const hit=pick(e.clientX-r.left,e.clientY-r.top);
     if(!hit)return deselect();
@@ -1734,17 +1797,15 @@ export function mountCity(el, opts = {}) {
     });
     return best;
   }
-  stage.addEventListener('wheel',e=>{e.preventDefault();
-    S.cam.z=Math.max(1,Math.min(4,S.cam.z*(e.deltaY>0?.9:1.11)));},{passive:false});
-  $('zin').onclick=()=>S.cam.z=Math.min(4,S.cam.z*1.25);
-  $('zout').onclick=()=>S.cam.z=Math.max(1,S.cam.z*.8);
-  $('zfit').onclick=()=>{S.cam={x:25*TS,y:18*TS,z:1.5}};
   WIN('keydown',e=>{
+    if(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    const step=3;
+    const delta={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,-step],ArrowDown:[0,step]}[e.key];
+    if(delta){e.preventDefault();S.cam.x+=delta[0];S.cam.y+=delta[1];clampCamera();return}
     if(e.key==='Escape'){deselect();S.armed=null;document.querySelectorAll('.hut').forEach(x=>x.classList.remove('armed'));stage.classList.remove('aim')}
-    if(e.key==='f')$('zfit').click();
   });
 
-  renderHuts(); setEnergy(S.energy); setTests(); setHealth(0);
+  renderHuts(); setEnergy(S.energy); startEnergyCollector(); setTests(); setHealth(0);
   log('mistral city ready','sys'); log('connect a repository to begin','');
   draw();
 
@@ -1941,9 +2002,9 @@ export function mountCity(el, opts = {}) {
     if(S.busy[target.id]) return null;
     const a=AGENTS[agentKey];
     S.busy[target.id]=true; S.busy['agent-'+agentKey]=true;
-    setEnergy(Math.max(0,S.energy-a.cost));
+    setEnergy(S.energy-a.cost);
     const hut=MODEL.huts.find(h=>h.agent===agentKey);
-    const start={x:hut.tx*TS+TS+14,y:hut.ty*TS+TS};
+    const start=hutCatPoint(hut);
     const cat={agent:agentKey,x:start.x,y:start.y,dir:1,state:'walk',
                say:agentKey==='repair'?'on it':'let me look',
                sayUntil:S.tick+120};
@@ -1977,7 +2038,7 @@ export function mountCity(el, opts = {}) {
     }
     cat.state='walk';
     const hut=MODEL.huts.find(x=>x.agent===agentKey);
-    moveCat(cat,pathTiles({x:cat.x,y:cat.y},{x:hut.tx*TS+TS+14,y:hut.ty*TS+TS}),2400,
+    moveCat(cat,pathTiles({x:cat.x,y:cat.y},hutCatPoint(hut)),2400,
       ()=>{S.cats=S.cats.filter(c=>c!==cat); delete S.busy['agent-'+agentKey];});
     delete S.busy[target.id]; delete S.live[target.id];
     const after=computeHealth(); setHealth(after,after-before);
@@ -1993,10 +2054,9 @@ export function mountCity(el, opts = {}) {
       if(!json||!json.systems) throw new Error('setModel needs { systems: [...] }');
       S.systems.forEach(x=>{ if(x.fxTimer) clearInterval(x.fxTimer) });
       S.systems=[]; S.cats=[]; S.scaffolds=[]; S.fx=[]; S.live={}; S.busy={}; deselect();
-      MODEL.systems=json.systems.map((sys,i)=>({
+      const incoming=json.systems.map((sys)=>({
         id:sys.id, name:sys.name||sys.id,
         kind:KINDS.includes(sys.kind)?sys.kind:'house',
-        tx:sys.tx!=null?sys.tx:12+(i%6)*6, ty:sys.ty!=null?sys.ty:10+Math.floor(i/6)*7,
         health:sys.health!=null?sys.health:100,
         status:sys.status||'healthy',
         blurb:sys.blurb||'', files:sys.files||[], connections:sys.connections||[],
@@ -2004,7 +2064,9 @@ export function mountCity(el, opts = {}) {
         level:sys.kind==='tower'?Math.max(1,Math.min(5,(json.city&&json.city.security&&json.city.security.passed||[]).length||1)):undefined,
         passed:(json.city&&json.city.security&&json.city.security.passed)||[]
       }));
-      MODEL.systems.forEach(sys=>{ sys.grow=0; S.systems.push(sys) });
+      MODEL.systems=layoutSystems(incoming,(json.repo&&json.repo.name)||'repository');
+      rebuildRoads();
+      MODEL.systems.forEach((sys,index)=>{ sys.grow=0;sys.growDelay=index*6;S.systems.push(sys) });
       if(!S.huts.length) MODEL.huts.forEach(h=>S.huts.push(h));
       if(json.repo&&json.repo.tests){ S.tp=json.repo.tests.pass; S.tt=json.repo.tests.total; setTests(); }
       setHealth(json.city&&json.city.health!=null?json.city.health:computeHealth());
@@ -2017,6 +2079,8 @@ export function mountCity(el, opts = {}) {
       if(!e||!e.type) return;
       const sys=id=>sysAt(id);
       switch(e.type){
+        case 'city.loading': showLoading(e.message); break;
+        case 'city.ready': hideLoading(); break;
         case 'agent.start': { const t=sys(e.target); if(t) dispatchLive(e.agent||'repair',t); break; }
         case 'agent.log':   log(e.text||'', e.level||''); break;
         case 'agent.edit':  log('editing '+e.file,'code'); break;
@@ -2051,11 +2115,12 @@ export function mountCity(el, opts = {}) {
 
     select(id){ const t=sysAt(id); if(t) select(t); },
     deselect,
-    camera(o){ if(o.x!=null)S.cam.x=o.x; if(o.y!=null)S.cam.y=o.y; if(o.z!=null)S.cam.z=o.z; },
+    camera(o){ if(o.x!=null)S.cam.x=o.x; if(o.y!=null)S.cam.y=o.y; clampCamera(); },
     on(name,cb){ (S.hooks=S.hooks||{})[name]=cb; },
     state(){ return {health:S.health,energy:S.energy,systems:S.systems.length}; },
     destroy(){
       cancelAnimationFrame(S.raf);
+      if(S.energyTimer) clearInterval(S.energyTimer);
       S.systems.forEach(x=>{ if(x.fxTimer) clearInterval(x.fxTimer) });
       Object.values(S.live).forEach(h=>{ if(h&&h.workT) clearInterval(h.workT) });
       _listeners.forEach(([t,f])=>window.removeEventListener(t,f));

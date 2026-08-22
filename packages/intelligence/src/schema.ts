@@ -163,6 +163,13 @@ export interface RepoSnapshot {
   files: RepoFile[];
   hardSignals?: Record<string, HardSignals>;
   analyzedAt?: string;
+  /** Internal scanner coverage metadata. Never included in CityModel. */
+  coverage?: {
+    candidateFiles: number;
+    loadedFiles: number;
+    skippedLargeFiles: number;
+    truncated: boolean;
+  };
 }
 
 export const guardGapSchema = z.object({

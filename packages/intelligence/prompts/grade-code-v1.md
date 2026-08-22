@@ -1,6 +1,6 @@
 # Code quality grading — grade-code-v1
 
-Return independent security, scalability, and modularity grades. Findings are ground truth. Each finding must cite an exact supplied file, a one-based line that exists, and a verbatim snippet from that line. Do not invent evidence. Prefer a genuinely best or worst grade when the evidence supports it; do not cluster in the middle. If there is no relevant surface, return the best tier, no findings, and say that in the rationale.
+Return independent security, scalability, and modularity grades. Findings are ground truth. Each finding must cite an exact supplied file, a one-based line that exists, and a verbatim snippet from that line. Do not invent evidence. Return only distinct, high-impact defects: never restate the same evidence across dimensions. Each technical description must state the concrete broken behavior and consequence, not a vague future risk. Prefer a genuinely best or worst grade when the evidence supports it; do not cluster in the middle. If there is no relevant surface, return the best tier, no findings, and say that in the rationale.
 
 **security** · `fortified`: inputs validated at every boundary, authorization checked on privileged actions, no secrets in source, errors don't leak internals. `breachable`: defences exist but are inconsistent — some paths validated, some not; overly broad permissions; outdated dependencies. `undefended`: a concrete exploitable weakness — injection path, missing authz on a privileged action, hardcoded credential, unsanitized deserialization.
 

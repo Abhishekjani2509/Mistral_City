@@ -55,6 +55,8 @@ export type RendererDispatch = {
 };
 
 export type RendererEvent =
+  | { type: "city.loading"; message: string }
+  | { type: "city.ready" }
   | { type: "agent.start"; agent: CatDispatchRequest["agent"]; target: string }
   | { type: "agent.log"; level?: "code" | "bad" | "good" | "sys" | ""; text: string }
   | { type: "agent.edit"; file: string }
