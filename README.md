@@ -1,8 +1,8 @@
 # Mistral City
 
-Mistral City is a web application that turns a repository into a living city.
-The React frontend runs on port `5173`. The Node agent bridge runs on port
-`3001` and streams typed `CatEvent` objects to the browser over SSE.
+Mistral City turns a repository into a living city. The React frontend runs
+on port `5173`; the Node server runs the agent bridge and serves the built app
+in production.
 
 ## Run locally
 
@@ -13,48 +13,56 @@ npm run dev
 
 Open <http://localhost:5173>.
 
-The current backend replays `contracts/repair-run.example.ndjson`. This makes
-the complete city interaction testable while SWE 3 replaces the replay runtime
-with the real Repair Cat implementation.
+The browser sends `POST /api/dispatch-cat` to the Node bridge. The response is
+an SSE stream of typed `CatEvent` objects. The current runtime still replays
+`contracts/repair-run.example.ndjson` until SWE 3’s real Repair Cat runtime is
+wired into `server/runtime.ts`.
 
-## Web integration boundary
+## Intelligence layer
 
-```text
-React UI :5173
-    │ POST /api/dispatch-cat
-    ▼
-Node bridge :3001
-    │ AsyncIterable<CatEvent>
-    ▼
-SSE response
-    │
-    ▼
-React city state
+The `packages/intelligence` workspace owns repository snapshots, semantic
+system discovery, evidence-backed health grading, security probes, Scout and
+Guard analysis, rescans, caching, and the canonical `mistral.city-model/v1`
+output. It never edits the analyzed repository.
+
+```bash
+npm run demo:mock
+npm test
+npm run typecheck
+npm run city-intel -- scan /path/to/repo --stream
+npm run benchmark:health
 ```
 
-The browser uses `fetch()` rather than `EventSource` because the dispatch
-request is a `POST` with a JSON body. CORS allows the frontend origin
-`http://localhost:5173`.
+Use `CITY_INTEL_DEMO_MODE=1` to allow live analysis failures to fall back to
+the committed demo snapshot. Model IDs are pinned through the
+`MISTRAL_*_MODEL` environment variables.
 
-The SWE 3 swap point is `server/runtime.ts`: replace `replayRepair` with an
-adapter around `runRepair(request)` while preserving the `CatRuntime` type.
+The stable CityModel contains semantic systems, health, issues, and evidence-
+backed connections. Renderer-specific positions and art types belong in the
+Neo adapter, not in the intelligence output.
 
-## Deployment direction
-
-GitHub Pages is suitable only for a static showcase of the frontend. It cannot
-run the Node agent bridge or access a repository for repair work.
-
-For the full demo, deploy one Node web service that serves both `dist/` and the
-`/api` routes:
+## Integration boundary
 
 ```text
-Build: npm install && npm run build
+Repository
+    │
+    ▼
+packages/intelligence
+    │ canonical CityModel
+    ▼
+Neo renderer adapter → mistral-city.setModel()
+    ▲
+    │ CatEvent adapter
+SWE 3 Repair Cat → POST /api/dispatch-cat → SSE
+```
+
+GitHub Pages can host only a static showcase. The full demo needs a Node web
+service that can run the intelligence layer, access the controlled demo
+repository, execute the agent runtime, and serve `dist/` plus `/api` routes.
+
+```text
+Build: npm run build
 Start: npm start
 Port: PORT provided by the host
 Environment: NODE_ENV=production
 ```
-
-The server is prepared for this shape. In production it serves the Vite build
-and the browser automatically calls the same origin. The real SWE 3 runtime
-will still need the Mistral/Vibe executable and a deliberately restricted demo
-repository available to the service.

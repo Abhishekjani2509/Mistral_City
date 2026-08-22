@@ -1,0 +1,43 @@
+{
+  "profile": "average",
+  "systems": [
+    { "id": "auth", "name": "Authentication", "plainDescription": "Logs people in and creates sessions.", "buildingType": "gate", "files": ["src/auth/login.ts", "src/auth/session.ts"], "connections": ["database"], "discoveryConfidence": 0.92, "quality": {
+      "security": { "tier": "breachable", "rationale": "Some protections are inconsistent.", "findings": [{ "id": "auth-mfa-gap", "type": "authentication", "technicalDescription": "Accounts can create a password-only session when MFA is disabled.", "plainDescription": "Some accounts rely on only one login check.", "file": "src/auth/session.ts", "evidence": "if (!account.mfaEnabled)", "severity": "major", "confidence": 0.92 }] },
+      "scalability": { "tier": "load_bearing", "rationale": "Authentication work is bounded.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "No separate deployment surface applies.", "findings": [] },
+      "modularity": { "tier": "tangled", "rationale": "Session policy is mixed into creation.", "findings": [{ "id": "auth-policy-coupling", "type": "maintainability", "technicalDescription": "Session creation also decides authentication assurance.", "plainDescription": "Changing login policy could unexpectedly affect sessions.", "file": "src/auth/session.ts", "evidence": "assurance: \"password-only\"", "severity": "minor", "confidence": 0.82 }] }
+    } },
+    { "id": "api", "name": "Application API", "plainDescription": "Serves orders and user profiles.", "buildingType": "port", "files": ["src/api/orders.ts", "src/api/users.ts"], "connections": ["database"], "discoveryConfidence": 0.93, "quality": {
+      "security": { "tier": "breachable", "rationale": "Authorization exists but validation is thin.", "findings": [{ "id": "api-name-validation", "type": "validation", "technicalDescription": "Profile names are only truncated, not validated.", "plainDescription": "Unexpected profile names may be accepted.", "file": "src/api/users.ts", "evidence": "displayName.slice(0, 200)", "severity": "minor", "confidence": 0.8 }] },
+      "scalability": { "tier": "strained", "rationale": "The order list is unbounded.", "findings": [{ "id": "api-unbounded-orders", "type": "unbounded_query", "technicalDescription": "The endpoint loads every order without pagination.", "plainDescription": "The order screen will slow down as the store grows.", "file": "src/api/orders.ts", "evidence": "SELECT * FROM orders", "severity": "major", "confidence": 0.97 }] },
+      "deployment": { "tier": "sputtering", "rationale": "Deployment relies on shared manual operations.", "findings": [] },
+      "modularity": { "tier": "well_walled", "rationale": "Routes have focused responsibilities.", "findings": [] }
+    } },
+    { "id": "database", "name": "Commerce Database", "plainDescription": "Stores orders and audit records.", "buildingType": "vault", "files": ["src/db/client.ts", "src/db/migrations/001_orders.sql"], "connections": [], "discoveryConfidence": 0.9, "quality": {
+      "security": { "tier": "fortified", "rationale": "No concrete injection path is present.", "findings": [] },
+      "scalability": { "tier": "strained", "rationale": "Audit lookups lack an index.", "findings": [{ "id": "db-audit-index", "type": "missing_index", "technicalDescription": "Audit events have no user or time index.", "plainDescription": "Looking up account history will slow down as records grow.", "file": "src/db/migrations/001_orders.sql", "evidence": "CREATE TABLE audit_events", "severity": "major", "confidence": 0.9 }] },
+      "deployment": { "tier": "sputtering", "rationale": "The migration has no documented rollback.", "findings": [{ "id": "db-no-rollback", "type": "migration", "technicalDescription": "The migration does not include a rollback path.", "plainDescription": "A failed database update would be difficult to undo.", "file": "src/db/migrations/001_orders.sql", "evidence": "CREATE TABLE orders", "severity": "major", "confidence": 0.88 }] },
+      "modularity": { "tier": "tangled", "rationale": "The database client is an untyped global.", "findings": [{ "id": "db-global-client", "type": "maintainability", "technicalDescription": "A global untyped client hides dependencies.", "plainDescription": "Database changes can affect unrelated features.", "file": "src/db/client.ts", "evidence": "export const db", "severity": "minor", "confidence": 0.8 }] }
+    } },
+    { "id": "frontend", "name": "Frontend Storefront", "plainDescription": "Lets customers enter checkout information.", "buildingType": "district", "files": ["src/frontend/App.tsx", "src/frontend/Checkout.tsx"], "connections": ["auth", "api"], "discoveryConfidence": 0.91, "quality": {
+      "security": { "tier": "fortified", "rationale": "No relevant security surface applies.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Rendering work is bounded.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "No separate deployment surface applies.", "findings": [] },
+      "modularity": { "tier": "tangled", "rationale": "Validation is embedded in rendering.", "findings": [{ "id": "frontend-inline-validation", "type": "maintainability", "technicalDescription": "Email validation is embedded in the component.", "plainDescription": "Checkout rules may behave differently in different screens.", "file": "src/frontend/Checkout.tsx", "evidence": "email.includes(\"@\")", "severity": "minor", "confidence": 0.78 }] }
+    } },
+    { "id": "operations", "name": "Operations", "plainDescription": "Configures and deploys the service.", "buildingType": "depot", "files": ["src/operations/config.ts", "src/operations/deploy.ts", "package.json"], "connections": ["database"], "discoveryConfidence": 0.89, "quality": {
+      "security": { "tier": "breachable", "rationale": "A local database address is used as a fallback.", "findings": [{ "id": "ops-config-fallback", "type": "configuration", "technicalDescription": "Database configuration silently falls back to a local value.", "plainDescription": "The service could connect to the wrong database.", "file": "src/operations/config.ts", "evidence": "postgres://localhost/store", "severity": "minor", "confidence": 0.82 }] },
+      "scalability": { "tier": "load_bearing", "rationale": "No relevant load surface applies.", "findings": [] },
+      "deployment": { "tier": "sputtering", "rationale": "Deployment is manual and has no rollback.", "findings": [{ "id": "ops-no-rollback", "type": "deployment", "technicalDescription": "The deployment declares no rollback operation.", "plainDescription": "A bad release would take longer to recover from.", "file": "src/operations/deploy.ts", "evidence": "rollback = undefined", "severity": "major", "confidence": 0.96 }] },
+      "modularity": { "tier": "well_walled", "rationale": "Operations are isolated.", "findings": [] }
+    } },
+    { "id": "tests", "name": "Automated Tests", "plainDescription": "Runs basic checks for login and API responses.", "buildingType": "guard_tower", "files": ["tests/auth.test.ts", "tests/api.test.ts"], "connections": ["auth", "api"], "discoveryConfidence": 0.9, "quality": {
+      "security": { "tier": "fortified", "rationale": "No relevant security surface applies.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Test work is bounded.", "findings": [] },
+      "deployment": { "tier": "sputtering", "rationale": "Tests are not configured for a deterministic one-shot run.", "findings": [] },
+      "modularity": { "tier": "tangled", "rationale": "Assertions only confirm values exist.", "findings": [{ "id": "tests-shallow", "type": "missing_test", "technicalDescription": "The API test only checks that status exists.", "plainDescription": "Important request behavior could break without a test noticing.", "file": "tests/api.test.ts", "evidence": "toBeDefined()", "severity": "major", "confidence": 0.94 }] }
+    } }
+  ],
+  "hardSignals": { "auth": { "coverage": 0.68 }, "api": { "coverage": 0.55 }, "database": { "coverage": 0.48 }, "frontend": { "coverage": 0.62 }, "operations": { "coverage": 0.4 }, "tests": { "coverage": 0.5 } },
+  "expected": { "minimumHealth": 60, "maximumHealth": 79, "status": "warning" }
+}

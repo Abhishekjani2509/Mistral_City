@@ -1,0 +1,6 @@
+{
+  "name": "healthy-commerce",
+  "private": true,
+  "scripts": { "test": "vitest run", "build": "tsc --noEmit" },
+  "dependencies": { "argon2": "latest", "express": "latest", "pg": "latest", "zod": "latest" }
+}

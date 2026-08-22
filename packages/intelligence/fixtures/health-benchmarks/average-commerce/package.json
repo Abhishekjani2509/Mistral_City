@@ -1,0 +1,6 @@
+{
+  "name": "average-commerce",
+  "private": true,
+  "scripts": { "test": "vitest", "build": "tsc" },
+  "dependencies": { "express": "latest", "pg": "latest", "react": "latest" }
+}
