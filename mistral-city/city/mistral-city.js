@@ -28,7 +28,7 @@ const CITY_CSS = `
   --warn:#EF8934;
   --bad:#D2321F;
   --unk:#5C6480;
-  --mute:#6E6A62;
+  --mute:#3A362F;
 }
 *{box-sizing:border-box}
 body{
@@ -48,7 +48,7 @@ button{font-family:inherit}
 .tabs{display:flex;gap:0;border:1px solid #34364A}
 .tab{
   appearance:none;border:0;border-right:1px solid #34364A;background:transparent;color:#9A9CB0;
-  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;cursor:pointer;
+  font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;
 }
 .tab:last-child{border-right:0}
 .tab:hover{color:var(--paper);background:#ffffff0f}
@@ -59,7 +59,7 @@ button{font-family:inherit}
 
 .btn{
   appearance:none;border:1px solid var(--ink);background:var(--paper);color:var(--ink);
-  padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer;letter-spacing:.01em;
+  padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer;
 }
 .btn:hover{background:#fff}
 .btn:active{transform:translateY(1px)}
@@ -88,15 +88,15 @@ button{font-family:inherit}
 .hud{position:absolute;z-index:40}
 
 #h-health{left:14px;top:14px;width:230px;padding:11px 12px}
-.lbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:800}
+.lbl{font-size:11px;color:var(--ink);font-weight:700}
 .big{font-family:"Silkscreen",monospace;font-size:26px;line-height:1;margin:7px 0 8px;display:flex;align-items:baseline;gap:7px}
 .big small{font-family:"Archivo";font-size:12px;font-weight:800}
 .meter{height:10px;background:var(--paper2);border:2px solid var(--ink);display:block;overflow:hidden}
 .meter i{display:block;height:100%;background:linear-gradient(90deg,var(--R),var(--t) 45%,var(--y));transition:width 1s cubic-bezier(.3,1,.4,1)}
-.res{display:flex;gap:12px;margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.res{display:flex;gap:12px;margin:11px -12px 0;padding:9px 12px 0;border-top:1px solid var(--line)}
 .res>div{display:flex;flex-direction:column;gap:1px}
 .res .v{font-family:"Silkscreen",monospace;font-size:13px}
-.res .k{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:800}
+.res .k{font-size:10.5px;color:var(--mute);font-weight:600}
 
 #h-legend{right:14px;top:14px;padding:9px 11px}
 .lg{display:flex;align-items:center;gap:7px;font-size:11px;padding:2px 0;color:var(--mute)}
@@ -114,7 +114,7 @@ button{font-family:inherit}
 .hut.busy{opacity:.4;pointer-events:none}
 .hut canvas{display:block;margin:0 auto 4px}
 .hut .cn{font-size:11px;font-weight:800;line-height:1.15}
-.hut .cv{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--t);margin-top:2px}
+.hut .cv{font-size:10.5px;font-weight:600;color:var(--t);margin-top:2px}
 .hut .cost{font-family:"Silkscreen",monospace;font-size:9px;color:var(--mute);margin-top:3px}
 
 #h-log{right:14px;bottom:14px;width:314px;max-height:240px;display:flex;flex-direction:column}
@@ -140,17 +140,17 @@ button{font-family:inherit}
 }
 #ins.on{transform:none}
 .ih{padding:11px 13px 11px;background:var(--ink);color:var(--paper);position:relative}
-.ik{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--y);font-weight:800}
+.ik{font-size:11px;color:#C6C8D6;font-weight:600}
 .it{font-size:18px;font-weight:800;letter-spacing:-.02em;margin:2px 0 0}
 .isub{font-size:12px;color:#B9BBC9;margin-top:5px;line-height:1.45}
 .x{position:absolute;right:8px;top:7px;width:22px;height:22px;border:0;background:transparent;color:#8A8CA0;cursor:pointer;font-size:15px}
 .x:hover{color:#fff}
 .ib{overflow-y:auto;overscroll-behavior:contain;min-height:0;flex:1 1 auto;padding:11px 13px}
 .srow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.chip{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border:2px solid var(--ink);color:#fff}
+.chip{font-size:10.5px;font-weight:700;padding:3px 8px;border:2px solid var(--ink);color:#fff}
 .hn{font-family:"Silkscreen",monospace;font-size:18px;margin-left:auto}
 .sec{margin-top:14px}
-.sec h4{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);margin:0 0 6px;font-weight:800}
+.sec h4{font-size:11.5px;color:var(--ink);margin:0 0 7px;font-weight:700}
 .iss{padding:8px 9px;background:#FBEEE9;border-left:3px solid var(--R);margin-bottom:5px}
 .iss.w{background:#FDF3E4;border-left-color:var(--o)}
 .iss.g{background:#EFF5E9;border-left-color:var(--ok)}
@@ -173,10 +173,11 @@ button{font-family:inherit}
 .act>span{min-width:0}.act .an{font-size:11px;font-weight:800;display:block;line-height:1.2;overflow-wrap:anywhere}
 .act .ad{font-size:9px;color:var(--mute);display:block;margin-top:2px;line-height:1.25;overflow-wrap:anywhere}
 .act .ac{margin-left:auto;flex:0 0 auto;font-family:"Silkscreen",monospace;font-size:9px}
-.chk{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);align-items:flex-start}
-.chk .cb{width:15px;height:15px;flex-shrink:0;display:grid;place-items:center;font-size:10px;
-  background:var(--R);color:#fff;font-weight:800}
-.chk.ok .cb{background:#5B9B3A}
+.chk{display:flex;gap:9px;margin:0 -13px;padding:7px 13px;border-bottom:1px solid var(--line);align-items:flex-start}
+.chk .cb{width:16px;height:16px;flex-shrink:0;padding:3px;box-sizing:border-box;
+  background:var(--R);color:#fff;margin-top:1px}
+.chk .cb svg{display:block;width:100%;height:100%}
+.chk.ok .cb{background:var(--ok)}
 .chk b{font-size:11.5px;font-weight:700;display:block;line-height:1.25}
 .chk i{font-size:10.5px;color:var(--mute);font-style:normal;display:block;margin-top:1px;line-height:1.35}
 .fixbox{border:2px solid var(--ink);background:var(--paper2);padding:9px 10px}
@@ -190,7 +191,7 @@ button{font-family:inherit}
 .res-card{margin-top:11px;padding:9px 10px;background:#EFF5E9;border-left:3px solid var(--ok)}
 .res-card .rt{font-size:12px;font-weight:800;color:#3E7A26}
 .res-card .rd{font-size:11px;color:#4E5C42;margin-top:3px;line-height:1.45}
-.res-card summary{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--mute);cursor:pointer;margin-top:7px}
+.res-card summary{font-size:11px;font-weight:600;color:var(--mute);cursor:pointer;margin-top:7px}
 .res-card .df{font-family:"JetBrains Mono",monospace;font-size:10px;margin-top:5px;line-height:1.6;color:#3E7A26}
 
 /* connect */
@@ -202,7 +203,7 @@ button{font-family:inherit}
     #4E7233;
   transition:opacity .5s}
 #connect.gone{opacity:0;pointer-events:none}
-#repo-label{display:block;margin:0 0 5px;color:var(--mute);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+#repo-label{display:block;margin:0 0 5px;color:var(--ink);font-size:11.5px;font-weight:700}
 #repo-url{display:block;width:100%;border:2px solid var(--ink);background:var(--paper);color:var(--ink);padding:9px 10px;font:12px "JetBrains Mono",monospace;outline:0}
 #repo-url:focus{border-color:var(--t);box-shadow:0 0 0 2px #E75D2E33}
 #repo-url::placeholder{color:#A8A296}
@@ -216,7 +217,7 @@ button{font-family:inherit}
 .ritem:hover{background:#fff}
 .rn{font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:500}
 .rm{font-size:10.5px;color:var(--mute);margin-top:2px}
-.rr{margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:var(--t);color:#fff;padding:3px 6px}
+.rr{margin-left:auto;font-size:10.5px;font-weight:700;background:var(--t);color:#fff;padding:3px 7px}
 
 #toast{position:absolute;left:50%;top:16px;transform:translateX(-50%) translateY(-12px);z-index:70;
   padding:8px 13px;font-size:12px;font-weight:700;opacity:0;transition:all .25s;pointer-events:none}
@@ -224,7 +225,7 @@ button{font-family:inherit}
 #zc{position:absolute;right:14px;bottom:270px;z-index:40;display:flex;flex-direction:column;gap:4px}
 #zc .btn{width:28px;height:28px;padding:0;font-size:13px}
 #hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;font-size:10.5px;
-  color:#EDEAE2;background:rgba(19,19,28,.72);padding:4px 10px;font-weight:600;letter-spacing:.02em}
+  color:#EDEAE2;background:rgba(19,19,28,.72);padding:4px 10px;font-weight:600}
 
 /* ---------- docs ---------- */
 .k1{background:linear-gradient(180deg,#F3B23E,#B32527)}
@@ -268,7 +269,7 @@ const CITY_HTML = `
       <button class="btn" id="zout">&minus;</button>
       <button class="btn" id="zfit">&#9633;</button>
     </div>
-    <div id="hint">drag or scroll to pan &middot; +/- to zoom &middot; 0 to fit &middot; click a building</div>
+    <div id="hint">drag or scroll to pan, +/- to zoom, 0 to fit, click a building</div>
 
     <aside class="card" id="ins">
       <div class="ih"><button class="x" id="ix">&times;</button>
@@ -313,8 +314,8 @@ export function mountCity(el, opts = {}) {
 
 
   /* ============================================================
-     MISTRAL CITY — pixel prototype
-     stardew-scale top-down pixel art · clash-of-clans structures
+     MISTRAL CITY, pixel prototype
+     stardew-scale top-down pixel art, clash-of-clans structures
      every roofline is the Mistral M, which is also two cat ears
      ============================================================ */
 
@@ -574,52 +575,52 @@ export function mountCity(el, opts = {}) {
     repo:{name:'mistral-shop', tests:{pass:18,total:19}},
     city:{energy:120, knowledge:4},
     systems:[
-      {id:'tower',name:'Town Hall',kind:'tower',tx:24,ty:15,health:100,status:'healthy',level:2,
+      {id:'tower',name:'Town Hall',kind:'tower',tx:16,ty:11,health:100,status:'healthy',level:2,
        passed:['secrets','deps'],
        blurb:'The repository itself. Its level is how secure this project is.',
        files:['package.json','next.config.js','middleware.ts'],
        connections:['auth','dashboard','api','docs'],issues:[]},
-      {id:'auth',name:'Authentication',kind:'gate',tx:15,ty:16,health:64,status:'broken',
+      {id:'auth',name:'Authentication',kind:'gate',tx:7,ty:12,health:64,status:'broken',
        blurb:'Handles logging in and keeping people signed in between visits.',
        files:['src/auth/session.ts','src/app/login/page.tsx','src/auth/guard.ts'],
        connections:['tower','profiles','db'],
        issues:[{t:'Session does not survive a refresh',
-         d:'authentication.test.ts · "session should persist after refresh" fails. Sessions live in component state only.'}]},
-      {id:'dashboard',name:'Dashboard',kind:'district',tx:33,ty:12,health:92,status:'healthy',
+         d:'authentication.test.ts, "session should persist after refresh" fails. Sessions live in component state only.'}]},
+      {id:'dashboard',name:'Dashboard',kind:'district',tx:25,ty:8,health:92,status:'healthy',
        blurb:'The screens a signed-in customer sees after they log in.',
        files:['src/app/dashboard/*.tsx','src/components/Chart.tsx'],
        connections:['tower','api','profiles'],issues:[]},
-      {id:'api',name:'API Workshop',kind:'workshop',tx:30,ty:20,health:81,status:'warning',
+      {id:'api',name:'API Workshop',kind:'workshop',tx:22,ty:16,health:81,status:'warning',
        blurb:'The server routes the app calls to read and change data.',
        files:['src/app/api/orders/route.ts','src/app/api/cart/route.ts'],
        connections:['tower','db','dashboard','payments'],
        issues:[{w:1,t:'Thin test coverage on /api/cart',
          d:'3 of 9 routes have no test. A change here could break checkout without anything turning red.'}]},
-      {id:'db',name:'Data Vault',kind:'vault',tx:21,ty:24,health:95,status:'healthy',
+      {id:'db',name:'Data Vault',kind:'vault',tx:13,ty:20,health:95,status:'healthy',
        blurb:'Where orders, users and products are stored.',
        files:['prisma/schema.prisma','src/lib/db.ts'],connections:['api','auth','profiles'],issues:[]},
-      {id:'profiles',name:'User Profiles',kind:'house',tx:14,ty:23,health:88,status:'healthy',
+      {id:'profiles',name:'User Profiles',kind:'house',tx:6,ty:19,health:88,status:'healthy',
        blurb:'Names, addresses and preferences for each customer.',
        files:['src/app/profile/page.tsx','src/lib/user.ts'],connections:['auth','db','dashboard'],issues:[]},
-      {id:'tests',name:'Test Tower',kind:'watch',tx:36,ty:16,health:90,status:'healthy',
+      {id:'tests',name:'Test Tower',kind:'watch',tx:28,ty:12,health:90,status:'healthy',
        blurb:'The checks that run before anything ships. 18 of 19 pass right now.',
        files:['tests/authentication.test.ts','tests/api.test.ts'],connections:['tower','api'],issues:[]},
-      {id:'docs',name:'Library',kind:'library',tx:14,ty:10,health:70,status:'warning',
+      {id:'docs',name:'Library',kind:'library',tx:6,ty:6,health:70,status:'warning',
        blurb:'The written explanation of how this project works.',
        files:['README.md','docs/setup.md'],connections:['tower'],
        issues:[{w:1,t:'Setup guide is out of date',
          d:'docs/setup.md still lists the old env vars. A new contributor hits a wall on step one.'}]},
-      {id:'payments',name:'Unknown ground',kind:'port',tx:34,ty:26,health:0,status:'unknown',
+      {id:'payments',name:'Unknown ground',kind:'port',tx:26,ty:22,health:0,status:'unknown',
        blurb:'Nobody has read this part of the codebase yet.',
        files:[],connections:['api'],issues:[]}
     ],
     huts:[
-      {id:'h-scout',kind:'hut',agent:'scout',tx:14,ty:8},
-      {id:'h-repair',kind:'hut',agent:'repair',tx:26,ty:8}
+      {id:'h-scout',kind:'hut',agent:'scout',tx:6,ty:4},
+      {id:'h-repair',kind:'hut',agent:'repair',tx:18,ty:4}
     ]
   };
 
-  /* building recipes — silhouette is what tells them apart */
+  /* building recipes: silhouette is what tells them apart */
   const RECIPES = {
     tower:   {w:34,h:58,roof:'ears',roofH:14,wc:3,wr:4,dw:6,extras:['antenna','mark'],wall:'c',shade:'n'},
     gate:    {w:46,h:34,roof:'ears',roofH:12,win:false,door:false,extras:['arch'],wall:'g',shade:'G'},
@@ -633,15 +634,67 @@ export function mountCity(el, opts = {}) {
     hut:     {w:22,h:20,roof:'ears',roofH:8,wc:2,wr:1,dw:5,wall:'b',shade:'B'}
   };
 
+  /* Scenery buildings for the rest of the town, one set per era, so the era
+     shows up everywhere and not only on the Town Hall plot. Smaller than every
+     real system on purpose.
+
+     Art rule 2 applies hard: no ear roofs and no orange ramp, or a viewer
+     cannot tell scenery from a system they can click. mkBuilding defaults BOTH
+     'flat' and 'gable' to the orange bands, so every recipe names its own. */
+  let rnd2;   // the world section defines rnd below; scenery baking runs after that
+  const STONE=['G','g','h'], WOOD=['B','b','v'], SLATE=['h','G','g'], BLUE=['U','u','U'];
+  const TOWNSFOLK=[
+   /*1 ruins   */ [{w:18,h:17,roof:'gable',roofH:6,win:false,door:false,wall:'g',shade:'G',bands:STONE},
+                   {w:15,h:14,roof:'gable',roofH:5,win:false,door:false,wall:'v',shade:'b',bands:WOOD},
+                   {w:21,h:15,roof:'flat', roofH:4,win:false,door:false,wall:'g',shade:'G',bands:STONE}],
+   /*2 timber  */ [{w:20,h:15,roof:'gable',roofH:6,wc:1,wr:1,dw:4,wall:'b',shade:'B',bands:WOOD},
+                   {w:16,h:13,roof:'gable',roofH:5,wc:1,wr:1,dw:3,wall:'v',shade:'b',bands:WOOD},
+                   {w:23,h:14,roof:'gable',roofH:5,wc:2,wr:1,dw:4,wall:'b',shade:'B',bands:WOOD}],
+   /*3 plaster */ [{w:22,h:17,roof:'gable',roofH:6,wc:2,wr:1,dw:4,wall:'c',shade:'n',bands:WOOD},
+                   {w:19,h:15,roof:'gable',roofH:5,wc:2,wr:1,dw:4,wall:'n',shade:'N',bands:BLUE},
+                   {w:25,h:16,roof:'gable',roofH:6,wc:3,wr:1,dw:4,wall:'c',shade:'n',bands:STONE}],
+   /*4 concrete*/ [{w:24,h:26,roof:'flat',roofH:4,wc:3,wr:3,dw:5,wall:'g',shade:'G',bands:SLATE},
+                   {w:20,h:19,roof:'flat',roofH:4,wc:2,wr:2,dw:4,wall:'n',shade:'N',bands:SLATE},
+                   {w:27,h:22,roof:'flat',roofH:4,wc:3,wr:2,dw:5,wall:'g',shade:'G',bands:BLUE}],
+   /*5 towers  */ [{w:22,h:36,roof:'flat',roofH:4,wc:2,wr:5,dw:5,wall:'g',shade:'G',bands:SLATE},
+                   {w:27,h:25,roof:'flat',roofH:4,wc:3,wr:3,dw:5,wall:'n',shade:'N',bands:BLUE},
+                   {w:18,h:42,roof:'flat',roofH:4,wc:2,wr:6,dw:4,wall:'g',shade:'G',bands:SLATE}]
+  ];
+  function ruinRows(rows,seed){
+    const g=rows.map(r=>r.split(''));
+    for(let y=0;y<g.length;y++)for(let x=0;x<g[y].length;x++){
+      const c=g[y][x]; if(c==='.'||c==='#') continue;
+      const v=rnd2(x*3.1+y*7.7+seed);
+      if(y<3 && v>0.68) g[y][x]='.';
+      else if(v>0.88)   g[y][x]= v>0.96?'.':'s';
+    }
+    return toRows(g);
+  }
+
   /* ============================================================
      3. WORLD / TILEMAP
      ============================================================ */
-  const TS=16, MW=52, MH=36;
+  const TS=16, MW=34, MH=29;
   const map=[];           // 0 grass, 1 dirt path, 2 dark grass, 3 flowers, 4 water
   function rnd(s){let x=Math.sin(s)*10000;return x-Math.floor(x)}
-  for(let y=0;y<MH;y++){map[y]=[];for(let x=0;x<MW;x++){
+  rnd2=rnd;
+  /* Every tile gets a fixed number in [0,1). It flips to the next era once the
+     score's fractional part passes it, so the town crosses over gradually
+     instead of all at once. Mostly distance from the Town Hall, so upgrades
+     radiate outward from the centre, with clustered noise for a ragged edge.
+     Assigned once and never re-rolled: a rescan must not reshuffle the town. */
+  const HALLX=16, HALLY=11;
+  const MAXD=Math.hypot(Math.max(HALLX,MW-HALLX),Math.max(HALLY,MH-HALLY));
+  const tmap=[], vmap=[];
+  for(let y=0;y<MH;y++){map[y]=[];tmap[y]=[];vmap[y]=[];for(let x=0;x<MW;x++){
     const n=rnd(x*7.3+y*13.1);
     map[y][x]= n>0.93?3 : n>0.72?2 : 0;
+    const d=Math.hypot(x-HALLX,y-HALLY)/MAXD;
+    const blob=rnd(Math.floor(x/3)*5.13+Math.floor(y/3)*8.71);
+    tmap[y][x]=Math.max(0,Math.min(0.999, d*0.62 + blob*0.38 ));
+    /* coarse first so paving and planting form patches, fine to break the edges */
+    const fine=rnd(x*4.77+y*9.13+0.5);
+    vmap[y][x]=Math.floor((fine>0.74?fine:blob)*4)%4;
   }}
   function carve(ax,ay,bx,by){
     let x=ax,y=ay;
@@ -649,10 +702,10 @@ export function mountCity(el, opts = {}) {
     while(y!==by){map[y][x]=1;y+=y<by?1:-1}
     map[y][x]=1;
   }
-  [...MODEL.systems,...MODEL.huts].forEach(s=>{ if(s.id!=='tower') carve(24,17,s.tx,s.ty+1) });
+  [...MODEL.systems,...MODEL.huts].forEach(s=>{ if(s.id!=='tower') carve(16,13,s.tx,s.ty+1) });
   /* a pond, because stardew */
-  for(let y=28;y<34;y++)for(let x=6;x<16;x++){
-    const d=Math.hypot((x-11)/5,(y-31)/2.6); if(d<1)map[y][x]=4;
+  for(let y=22;y<29;y++)for(let x=1;x<15;x++){
+    const d=Math.hypot((x-7.5)/5.2,(y-25.5)/2.5); if(d<1)map[y][x]=4;
   }
 
   /* tile art */
@@ -700,6 +753,98 @@ export function mountCity(el, opts = {}) {
   }
   for(let v=0;v<4;v++){TILES[5][v]=warmTile(v*17.3,false);TILES[6][v]=warmTile(v*23.1,true);}
 
+  /* ------------------------------------------------------------
+     THE WHOLE BOARD ANSWERS TO THE SECURITY SCORE.
+     Paving only the roads left the top era as a motorway through a
+     meadow, so the ground itself walks from all-wild to nearly
+     all-slab, with greenery surviving as planted squares.
+     ------------------------------------------------------------ */
+  const TILE_THEME=[
+   {grass:'z',fleck:'A',dark:'z',dfleck:'l',path:'d',pfleck:'z',flower:'l',fleck2:'L',water:'q',slab:'g',seam:'G',accent:'l',back:'#2C3B22'},
+   {grass:'a',fleck:'A',dark:'A',dfleck:'z',path:'d',pfleck:'D',flower:'y',fleck2:'o',water:'q',slab:'g',seam:'G',accent:'y',back:'#3E5A2A'},
+   {grass:'a',fleck:'6',dark:'A',dfleck:'a',path:'g',pfleck:'G',flower:'y',fleck2:'o',water:'q',slab:'g',seam:'h',accent:'o',back:'#4E7233'},
+   {grass:'6',fleck:'7',dark:'a',dfleck:'6',path:'3',pfleck:'1',flower:'9',fleck2:'8',water:'q',slab:'1',seam:'3',accent:'8',back:'#6E6559'},
+   {grass:'7',fleck:'6',dark:'6',dfleck:'7',path:'1',pfleck:'3',flower:'8',fleck2:'9',water:'Q',slab:'2',seam:'3',accent:'8',back:'#8A8074'}
+  ];
+  /* Kind 0 is ~72% of the board, kind 2 ~21%, kind 3 ~7%. An orange accent in
+     kind 0 paints a fifth of the map orange, so accents live in rarer kinds. */
+  const GROUND_MIX={
+   1:{0:['wild','wild','moss','wild'],       2:['moss','wild','moss','wild'],        3:['bramble','wild','bramble','moss']},
+   2:{0:['grass','grass','tuft','grass'],    2:['tuft','grass','tuft','grass'],      3:['flower','grass','flower','tuft']},
+   3:{0:['grass','slab','grass','tuft'],     2:['grass','slab','tuft','slab'],       3:['flower','slab','planter','grass']},
+   4:{0:['slab','slab','grass','slabSeam'],  2:['slabSeam','slab','slab','planter'], 3:['slabAccent','slab','planter','slab']},
+   5:{0:['slab','slabSeam','slab','slab'],   2:['slabSeam','slab','slab','slabAccent'],3:['planter','slabAccent','slabSeam','planter']}
+  };
+  function paintGround(g,style,t,seed){
+    const scatter=(ch,count,j)=>{
+      for(let i=0;i<count;i++){
+        const x=Math.floor(rnd(seed+i*3.7+(j||0))*TS), y=Math.floor(rnd(seed+i*5.1+1+(j||0))*TS);
+        g[y][x]=ch; if(rnd(seed+i)>0.6&&g[y+1]) g[y+1][x]=ch;
+      }
+    };
+    switch(style){
+      case 'wild':    box(g,0,0,TS,TS,t.grass); scatter(t.fleck,11); scatter(t.dfleck,5,9); break;
+      case 'moss':    box(g,0,0,TS,TS,t.dark);  scatter(t.dfleck,12); break;
+      case 'bramble': box(g,0,0,TS,TS,t.grass); scatter(t.dfleck,9); scatter(t.fleck2,4,3); break;
+      case 'grass':   box(g,0,0,TS,TS,t.grass); scatter(t.fleck,9); break;
+      case 'tuft':    box(g,0,0,TS,TS,t.grass); scatter(t.fleck,7); scatter(t.dark,4,5); break;
+      case 'flower': { box(g,0,0,TS,TS,t.grass); scatter(t.fleck,7);
+        const x=4+Math.floor(rnd(seed)*7), y=4+Math.floor(rnd(seed+2)*7);
+        box(g,x,y,2,2,t.flower); box(g,x-1,y+1,1,1,t.fleck2); box(g,x+2,y+1,1,1,t.fleck2); break; }
+      case 'slab':      box(g,0,0,TS,TS,t.slab); scatter(t.seam,3,7); break;
+      case 'slabSeam':  box(g,0,0,TS,TS,t.slab); box(g,0,0,TS,1,t.seam); box(g,0,0,1,TS,t.seam); break;
+      case 'slabAccent':box(g,0,0,TS,TS,t.slab); box(g,0,0,TS,1,t.seam); box(g,0,0,1,TS,t.seam);
+                        box(g,4,4,8,8,t.accent); break;
+      case 'planter':   box(g,0,0,TS,TS,t.slab); box(g,0,0,TS,1,t.seam); box(g,0,0,1,TS,t.seam);
+                        box(g,3,3,10,10,t.seam); box(g,4,4,8,8,t.grass); scatter(t.fleck,3,11); break;
+    }
+  }
+  function themedTile(lv,kind,seed,variant){
+    const t=TILE_THEME[lv-1], g=grid(TS,TS);
+    if(kind===1){
+      box(g,0,0,TS,TS,t.path);
+      for(let i=0;i<11;i++){
+        const x=Math.floor(rnd(seed+i*2.1)*TS), y=Math.floor(rnd(seed+i*4.3+9)*TS);
+        g[y][x]= rnd(seed+i)>0.5 ? t.pfleck : (lv>=4?t.pfleck:'f');
+      }
+      if(lv>=4){ box(g,0,0,TS,1,'3'); box(g,0,0,1,TS,'3'); }
+      if(lv===5){ for(let x=2;x<TS-2;x+=6) box(g,x,7,3,1,'8'); }
+      if(lv<=2){ for(let i=0;i<4;i++){
+        const x=Math.floor(rnd(seed+i*6.1)*TS), y=Math.floor(rnd(seed+i*8.3)*TS);
+        g[y][x]= lv===1?'l':'z'; } }
+    } else if(kind===4){
+      box(g,0,0,TS,TS,t.water);
+      for(let i=0;i<6;i++){
+        const x=Math.floor(rnd(seed+i*3.1)*TS), y=Math.floor(rnd(seed+i*2.9)*TS);
+        box(g,x,y,3,1, lv===5?'q':'Q');
+      }
+    } else {
+      paintGround(g, GROUND_MIX[lv][kind][variant], t, seed);
+    }
+    return bake(toRows(g));
+  }
+  const THEME_TILES={};
+  function themeTiles(lv){
+    lv=Math.max(1,Math.min(5,lv|0));
+    if(!THEME_TILES[lv]){
+      const a=[[],[],[],[],[]];
+      for(let k=0;k<5;k++)for(let v=0;v<4;v++) a[k][v]=themedTile(lv,k,v*31.7+k*11.3,v);
+      THEME_TILES[lv]=a;
+    }
+    return THEME_TILES[lv];
+  }
+  /* daylight, interpolated so it moves with the score rather than stepping */
+  const GLOOM=[0.30,0.14,0,0,0], WARM=[0,0,0,0.07,0.13];
+  function anchorLerp(arr,sv){
+    const i=Math.max(0,Math.min(3,Math.floor(sv)-1)), f=Math.max(0,Math.min(1,sv-(i+1)));
+    return arr[i]+(arr[i+1]-arr[i])*f;
+  }
+  function mixHex(a,b,f){
+    const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+    const A=p(a),B=p(b);
+    return '#'+[0,1,2].map(i=>Math.round(A[i]+(B[i]-A[i])*f).toString(16).padStart(2,'0')).join('');
+  }
+
   /* trees + props */
   function treeSprite(){
     const g=grid(20,26);
@@ -730,14 +875,54 @@ export function mountCity(el, opts = {}) {
     return bake(toRows(g));
   }
   const SPR = {tree:treeSprite(), rock:rockSprite(), bush:bushSprite(), sign:signSprite()};
-  const PROPS=[];
-  for(let i=0;i<46;i++){
-    const x=Math.floor(rnd(i*17.7)*MW), y=Math.floor(rnd(i*29.3+5)*MH);
-    if(map[y][x]===1||map[y][x]===4)continue;
-    const near=[...MODEL.systems,...MODEL.huts].some(s=>Math.abs(s.tx-x)<5&&Math.abs(s.ty-y)<5);
-    if(near)continue;
-    const k=rnd(i*3.3)>0.55?'tree':rnd(i*5.5)>0.5?'bush':'rock';
-    PROPS.push({x:x*TS,y:y*TS,k});
+  /* what grows out there, per era */
+  const PROP_VOCAB=[
+   ['deadtree','stump','bramble','boulder','weeds','mud','bramble','weeds'],
+   ['tree','stump','logpile','bush','rock','barrel','crate','bush'],
+   ['tree','bush','hedge','woodlamp','planter','bench','rock','tree'],
+   ['tree','sapling','planter','steellamp','bollard','bench','grate','container','crate'],
+   ['sapling','topiary','steellamp','bollard','planter','bench','container','pylon','grate','antenna']
+  ];
+
+  /* One fixed pool, decided at boot and never re-rolled.
+       thresh  the score at which this site starts existing
+       off     which side of the era boundary it sits on, same field as the tiles
+     Drawing filters by score, so there is no rebuild cost and nothing shuffles
+     between scans. Houses appear as the repository gets safer. */
+  const SITES=[];
+  function buildSites(){
+    if(SITES.length) return;
+    const taken=[];
+    const clear=(x,y,r)=> !taken.some(t=>Math.abs(t[0]-x)<r&&Math.abs(t[1]-y)<r)
+      && ![...MODEL.systems,...MODEL.huts].some(m=>Math.abs(m.tx-x)<5&&Math.abs(m.ty-y)<5);
+    const offAt=(x,y)=>{
+      const d=Math.hypot(x-HALLX,y-HALLY)/MAXD;
+      return Math.max(0,Math.min(0.999,d*0.62+rnd(Math.floor(x/3)*5.13+Math.floor(y/3)*8.71)*0.38));
+    };
+    /* houses first, they are bigger and want the open ground */
+    const HN=22;
+    for(let i=0,placed=0;i<HN*5&&placed<HN;i++){
+      const x=1+Math.floor(rnd(i*11.3+2.7)*(MW-2)), y=2+Math.floor(rnd(i*19.7+4.1)*(MH-3));
+      if(map[y][x]===1||map[y][x]===4) continue;
+      if(map[y][x-1]===4||map[y][x+1]===4) continue;
+      if(!clear(x,y,4)) continue;
+      const f=placed/(HN-1);
+      /* a third are there from the start, the rest arrive as the score climbs */
+      let th = f<0.34 ? 1 : 1+4*((f-0.34)/0.66);
+      th = Math.max(1,Math.min(5, th+(rnd(i*6.1)-0.5)*0.6));
+      taken.push([x,y]); placed++;
+      SITES.push({x:x*TS,y:y*TS,house:true,vi:Math.floor(rnd(i*7.7)*3),thresh:th,off:offAt(x,y)});
+    }
+    const PN=58;
+    for(let i=0;i<PN;i++){
+      const x=Math.floor(rnd(i*17.7)*MW), y=Math.floor(rnd(i*29.3+5)*MH);
+      if(map[y][x]===1||map[y][x]===4)continue;
+      if(!clear(x,y,2))continue;
+      const r=rnd(i*2.9+1.3);
+      taken.push([x,y]);
+      SITES.push({x:x*TS,y:y*TS,house:false,vi:Math.floor(rnd(i*3.3)*10),
+                  thresh: r<0.68?1:1+4*((r-0.68)/0.32), off:offAt(x,y)});
+    }
   }
 
   /* bake buildings */
@@ -771,7 +956,7 @@ export function mountCity(el, opts = {}) {
 
 
   /* ============================================================
-     LEVEL SYSTEM — Town Hall + its whole plot
+     LEVEL SYSTEM: Town Hall + its whole plot
      the arc is not "castle gets bigger", it is
      overgrown medieval ruin  ->  industrial Mistral waterfront
      ============================================================ */
@@ -779,7 +964,7 @@ export function mountCity(el, opts = {}) {
    {id:'secrets',name:'No secrets in the repo',
     fail:'.env is committed and contains a live Stripe key',
     pass:'.env is gitignored, keys read from the environment',
-    fix:'git rm --cached .env  ·  echo ".env" >> .gitignore',
+    fix:'git rm --cached .env && echo ".env" >> .gitignore',
     how:'scan tracked files for high-entropy strings and known key prefixes'},
    {id:'deps',name:'No critical dependency CVEs',
     fail:'2 critical advisories in the lockfile',
@@ -839,6 +1024,10 @@ export function mountCity(el, opts = {}) {
     ".llllllll.","lLLllLLlll","llllllllll","lllLllllLl","llllllllll",".########."],
    planter:[
     "...l..l...","..lLllLl..",".llllllll.","..llllll..",".gGGGGGGg.",".gGgggggg.",".gGGGGGGg.","..######.."],
+   /* RING era 5 referenced this twice with no sprite, so the if(!sp)return
+      guard silently dropped two waterfront props on every frame. */
+   topiary:[
+    "...LL...","..LlLL..",".LlllLL.","LlllllLL",".LlllLL.","..LllL..","...bb...","..gGGg..",".gGGGGg.",".gGggGg.","..####.."],
    woodlamp:[
     "...##...","..#WW#..","..#WW#..","...##...","...bb...","...bb...","...bb...","...bb...","...bb...","..svvs.."],
    steellamp:[
@@ -877,6 +1066,12 @@ export function mountCity(el, opts = {}) {
     "..........",".gGgGgGg..",".GgGgGgG..",".gGgGgGg..","..........."]
   };
   Object.keys(PROPART).forEach(k=>{ SPR[k]=P(PROPART[k]) });
+  TOWNSFOLK.forEach((set,li)=>set.forEach((r,vi)=>{
+    let rows=mkBuilding(r);
+    if(li===0) rows=ruinRows(rows,vi*13.7);
+    SPR['fill'+(li+1)+vi]=bake(rows);
+  }));
+  buildSites();
 
   /* ---------- the five town halls ---------- */
   function thWild(){ /* L1: mossy ruin swallowed by the forest */
@@ -1107,7 +1302,8 @@ export function mountCity(el, opts = {}) {
     systems:[],huts:[],selected:null,armed:null,busy:{},connected:false,
     energy:MODEL.city.energy,knowledge:MODEL.city.knowledge,health:0,
     tp:MODEL.repo.tests.pass,tt:MODEL.repo.tests.total,
-    cam:{x:25*TS,y:18*TS,z:2.6},cats:[],ambient:[],fx:[],scaffolds:[],revealed:false,tick:0
+    cam:{x:16*TS,y:13*TS,z:2,xt:16*TS,yt:13*TS,zt:2},
+    score:1,scoreShown:1,cats:[],ambient:[],fx:[],scaffolds:[],revealed:false,tick:0
   };
 
   const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
@@ -1123,6 +1319,27 @@ export function mountCity(el, opts = {}) {
   }
   WIN('resize',resize); resize();
 
+  /* A tile or site flips to the next era once the score's fractional part
+     passes its own threshold. Whole numbers are uniform; everything between is
+     a genuine mix of the two neighbouring eras. */
+  function eraFor(off){
+    const sv=S.scoreShown, base=Math.floor(sv);
+    return Math.max(1,Math.min(5, base + ((sv-base)>off ? 1 : 0)));
+  }
+  function hallLevel(){ return Math.max(1,Math.min(5,Math.round(S.scoreShown))); }
+  function setScore(v){
+    const nv=Math.max(1,Math.min(5,Number(v)||1));
+    if(Math.abs(nv-S.score)<0.0005) return nv;
+    const was=S.score, wasEra=hallLevelOf(was);
+    S.score=nv;
+    themeTiles(Math.floor(nv)); themeTiles(Math.min(5,Math.floor(nv)+1));  // bake before the wave
+    /* only speak when the era actually turns over, or a slider drag floods the log */
+    const era=hallLevelOf(nv);
+    if(era!==wasEra) log(`security ${Math.round((nv-1)/4*100)}%, the town is <b>${LEVELS[era-1].name}</b>`,
+                         nv>was?'good':'bad');
+    return nv;
+  }
+  function hallLevelOf(v){ return Math.max(1,Math.min(5,Math.round(v))); }
   function sysAt(id){return S.systems.find(s=>s.id===id)}
   function sprFor(s){
     if(s.kind==='tower') return BAKED_TH[(s.level||3)-1];
@@ -1136,26 +1353,73 @@ export function mountCity(el, opts = {}) {
   /* ============================================================
      5. RENDER LOOP
      ============================================================ */
+  const ZMIN=1, ZMAX=4;
+  function clampCam(){
+    const z=S.cam.zt, W=MW*TS, H=MH*TS;
+    const mx=Math.min(S.vw/(2*z),W/2), my=Math.min(S.vh/(2*z),H/2);
+    S.cam.xt=Math.max(mx,Math.min(W-mx,S.cam.xt));
+    S.cam.yt=Math.max(my,Math.min(H-my,S.cam.yt));
+  }
+  /* keeps the world point under (sx,sy) pinned while the zoom changes */
+  function zoomTo(nz,sx,sy){
+    nz=Math.max(ZMIN,Math.min(ZMAX,Math.round(nz)));
+    if(nz===S.cam.zt) return;
+    if(sx==null){sx=S.vw/2;sy=S.vh/2}
+    const z0=S.cam.zt;
+    const wx=(sx-S.vw/2)/z0+S.cam.xt, wy=(sy-S.vh/2)/z0+S.cam.yt;
+    S.cam.zt=nz;
+    S.cam.xt=wx-(sx-S.vw/2)/nz; S.cam.yt=wy-(sy-S.vh/2)/nz;
+    clampCam();
+  }
+  function panTarget(x,y){ S.cam.xt=x; S.cam.yt=y; clampCam(); }
+
   function draw(){
     S.tick++;
+    /* Ease on elapsed time, not frames: a fixed per-frame factor runs at half
+       speed on a 30Hz projector, which the handoff warns about. Settles exactly
+       so the zoom comes to rest on a whole number and pixels stay square. */
+    const tnow=performance.now();
+    const dt=Math.min(64,tnow-(S.lastT||tnow)); S.lastT=tnow;
+    const ease=1-Math.exp(-dt/70);
+    S.cam.z+=(S.cam.zt-S.cam.z)*ease;
+    S.cam.x+=(S.cam.xt-S.cam.x)*ease;
+    S.cam.y+=(S.cam.yt-S.cam.y)*ease;
+    if(Math.abs(S.cam.zt-S.cam.z)<0.0015) S.cam.z=S.cam.zt;
+    if(Math.abs(S.cam.xt-S.cam.x)<0.05) S.cam.x=S.cam.xt;
+    if(Math.abs(S.cam.yt-S.cam.y)<0.05) S.cam.y=S.cam.yt;
+    /* the wave: easing the score is what makes blocks flip in sequence */
+    const sEase=1-Math.exp(-dt/300);
+    S.scoreShown+=(S.score-S.scoreShown)*sEase;
+    if(Math.abs(S.score-S.scoreShown)<0.0015) S.scoreShown=S.score;
+
     const z=S.cam.z;
     ctx.imageSmoothingEnabled=false;
-    ctx.fillStyle=C.grassdk; ctx.fillRect(0,0,S.vw,S.vh);
+    const sv=Math.max(1,Math.min(5,S.scoreShown));
+    const eLo=Math.max(1,Math.min(4,Math.floor(sv))), eHi=Math.min(5,eLo+1);
+    const sFrac=sv-Math.floor(sv);
+    ctx.fillStyle=mixHex(TILE_THEME[eLo-1].back,TILE_THEME[eHi-1].back,sFrac);
+    ctx.fillRect(0,0,S.vw,S.vh);
+
+    /* the Town Hall cannot show a half state, so it steps at the midpoint */
+    const _th=S.systems.find(x=>x.kind==='tower');
+    if(_th){ const hl=hallLevel(); if(_th.level!==hl){ _th.level=hl; _th.grow=0.4; } }
     const ox=Math.round(S.vw/2 - S.cam.x*z), oy=Math.round(S.vh/2 - S.cam.y*z);
 
     /* tiles */
     const x0=Math.max(0,Math.floor(-ox/z/TS)), x1=Math.min(MW,Math.ceil((S.vw-ox)/z/TS));
     const y0=Math.max(0,Math.floor(-oy/z/TS)), y1=Math.min(MH,Math.ceil((S.vh-oy)/z/TS));
+    /* two cached atlases in flight, one comparison per tile picks between them */
+    const TA=themeTiles(eLo), TB=themeTiles(eHi);
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-      const k=map[y][x], v=(x*3+y*7)%4;
-      ctx.drawImage(TILES[k][v], ox+x*TS*z, oy+y*TS*z, TS*z, TS*z);
+      const k=map[y][x], v=vmap[y][x];
+      ctx.drawImage((sFrac>tmap[y][x]?TB:TA)[k][v], ox+x*TS*z, oy+y*TS*z, TS*z, TS*z);
     }
 
     /* depth-sorted entities */
     const ents=[];
     const th=S.systems.find(x=>x.kind==='tower');
     if(th){
-      const lv=th.level||3, ax=th.tx*TS+TS/2, ay=th.ty*TS+TS;
+      const lv=hallLevel(), ax=th.tx*TS+TS/2, ay=th.ty*TS+TS;
       const dg=DISTRICT_GROUND[lv-1];
       ctx.drawImage(dg,Math.round(ox+(ax-dg.width/2)*z),Math.round(oy+(ay-dg.height*0.62)*z),
         dg.width*z,dg.height*z);
@@ -1166,9 +1430,14 @@ export function mountCity(el, opts = {}) {
           Math.round(oy+(py-sp.height)*z),sp.width*z,sp.height*z)});
       });
     }
-    PROPS.forEach(p=>ents.push({y:p.y,draw:()=>{
-      const s=SPR[p.k]; ctx.drawImage(s,ox+p.x*z,oy+(p.y-s.height+TS)*z,s.width*z,s.height*z);
-    }}));
+    SITES.forEach(p=>{
+      if(sv<p.thresh) return;
+      const era=eraFor(p.off);
+      const vocab=PROP_VOCAB[era-1];
+      const sp=SPR[p.house ? 'fill'+era+(p.vi%3) : vocab[p.vi%vocab.length]];
+      if(!sp) return;
+      ents.push({y:p.y,draw:()=>ctx.drawImage(sp,ox+p.x*z,oy+(p.y-sp.height+TS)*z,sp.width*z,sp.height*z)});
+    });
     S.systems.forEach(s=>{
       if(s.hidden) return;
       const a=anchor(s);
@@ -1184,7 +1453,7 @@ export function mountCity(el, opts = {}) {
         ctx.fillRect(px+2*z,py+1*z,(sp.width-4)*z,8*z); ctx.globalAlpha=1;
         const c=CATS[h.agent].sit;
         if(!S.busy['agent-'+h.agent]) ctx.drawImage(c,px+(sp.width+2)*z,py+(sp.height-c.height-1)*z,c.width*z,c.height*z);
-        labelSm(AGENTS[h.agent].verb.toUpperCase(),px+sp.width*z/2,py-3,z,AGENTS[h.agent].accent);
+        labelSm(AGENTS[h.agent].verb,px+sp.width*z/2,py-3,z,AGENTS[h.agent].accent);
       }});
     });
     S.scaffolds.forEach(sc=>ents.push({y:sc.y+1,draw:()=>{
@@ -1238,6 +1507,13 @@ export function mountCity(el, opts = {}) {
       if(c.say&&S.tick<c.sayUntil) bubble(c.say,px+spr.width*z/2,py-6,z);
     }}));
     ents.sort((a,b)=>a.y-b.y).forEach(e=>e.draw());
+
+    /* level light, over the world but under the fog and particles */
+    const gl=anchorLerp(GLOOM,sv), wm=anchorLerp(WARM,sv);
+    if(gl>0.001){ ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.globalAlpha=gl;
+      ctx.fillStyle='#16241A'; ctx.fillRect(0,0,S.vw,S.vh); ctx.restore(); }
+    if(wm>0.001){ ctx.save(); ctx.globalCompositeOperation='overlay'; ctx.globalAlpha=wm;
+      ctx.fillStyle='#FFDCA6'; ctx.fillRect(0,0,S.vw,S.vh); ctx.restore(); }
 
     /* fog over unknown ground */
     S.systems.filter(s=>s.status==='unknown').forEach(s=>{
@@ -1308,7 +1584,7 @@ export function mountCity(el, opts = {}) {
       if(showName){
         if(s.kind==='tower'){
           const L=LEVELS[(s.level||1)-1];
-          label(`${s.name}  ·  LVL ${s.level} ${L.name}`,px+spr.width*z/2,py-4,z,C.ink,C.paper,L.tone,(s.level/5)*100);
+          label(`${s.name}   ${L.name}`,px+spr.width*z/2,py-4,z,C.ink,C.paper,L.tone,(s.level/5)*100);
         } else label(`${s.name}  ${s.health}%`,px+spr.width*z/2,py-4,z,C.ink,C.paper,col,s.health);
       }
     }
@@ -1494,6 +1770,17 @@ export function mountCity(el, opts = {}) {
   }
 
 
+  /* Pixel tick and cross, written as rows like every other sprite here and
+     emitted as 1px SVG rects in currentColor. No image files. */
+  function pixIcon(rows){
+    let r='';
+    rows.forEach((row,y)=>{ for(let x=0;x<row.length;x++) if(row[x]==='#')
+      r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="currentColor"/>`; });
+    return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+  }
+  const ICON_OK = pixIcon(["........","......#.",".....##.","#...##..","##.##...",".###....","..#.....","........"]);
+  const ICON_NO = pixIcon(["........",".##..##.","..####..","...##...","...##...","..####..",".##..##.","........"]);
+
   function securityPanel(s){
     const lv=s.level||3, L=LEVELS[lv-1];
     const nextFail=CHECKS.find(c=>!s.passed.includes(c.id));
@@ -1503,10 +1790,10 @@ export function mountCity(el, opts = {}) {
       <div class="lvlname">${L.name}</div>
       <div class="lvlblurb">${L.blurb}</div>
     </div>
-    <div class="sec"><h4>Security · ${s.passed.length} of 5 checks pass</h4>`;
+    <div class="sec"><h4>Security, ${s.passed.length} of 5 checks pass</h4>`;
     CHECKS.forEach(c=>{
       const ok=s.passed.includes(c.id);
-      h+=`<div class="chk ${ok?'ok':''}"><span class="cb">${ok?'&#10003;':'&#10007;'}</span>
+      h+=`<div class="chk ${ok?'ok':''}"><span class="cb">${ok?ICON_OK:ICON_NO}</span>
         <span><b>${c.name}</b><i>${ok?c.pass:c.fail}</i></span></div>`;
     });
     h+=`</div>`;
@@ -1527,15 +1814,16 @@ export function mountCity(el, opts = {}) {
   function applyFix(id){
     const s=sysAt('tower'); if(s.passed.includes(id))return;
     const c=CHECKS.find(x=>x.id===id), was=s.level;
-    log(`applying fix · ${c.name.toLowerCase()}`,'sys');
+    log(`applying fix, ${c.name.toLowerCase()}`,'sys');
     log(c.fix,'code');
     setTimeout(()=>{
       s.passed.push(id); s.level=Math.max(1,Math.min(5,s.passed.length));
+      setScore(s.level);                       // move the whole board, not just the hall
       const a=anchor(s);
       burst(a.x,a.y-a.h*0.6,34,'spark');
-      floatText(a.x,a.y-a.h-8,`LVL ${was} → ${s.level}`,LEVELS[s.level-1].tone);
+      floatText(a.x,a.y-a.h-8,`${LEVELS[was-1].name} to ${LEVELS[s.level-1].name}`,LEVELS[s.level-1].tone);
       s.grow=0.55;
-      log(`security check passed · <b>Town Hall reached level ${s.level} · ${LEVELS[s.level-1].name}</b>`,'good');
+      log(`security check passed, <b>Town Hall reached level ${s.level}, ${LEVELS[s.level-1].name}</b>`,'good');
       setKnow(S.knowledge+1);
       const after=computeHealth(); setHealth(after,after-S.health);
       toast(`Town Hall levelled up: ${LEVELS[s.level-1].name}`);
@@ -1555,7 +1843,7 @@ export function mountCity(el, opts = {}) {
       [6200,`editing src/auth/session.ts`,'code'],
       [7500,`editing src/auth/guard.ts`,'code'],
       [8800,`running: pnpm test authentication`,'code'],
-      [10600,`authentication.test.ts · 6 passed`,'good'],
+      [10600,`authentication.test.ts, 6 passed`,'good'],
       [11300,`repair verified`,'good']]
   };
 
@@ -1644,8 +1932,8 @@ export function mountCity(el, opts = {}) {
         Health ${was}% → 94%.</div>
         <details><summary>What changed</summary><div class="df">
         M src/auth/session.ts<br>M src/auth/guard.ts<br><br>
-        &#10003; authentication.test.ts · 6 passed<br>&#10003; 19/19 suite green</div></details></div>`;
-      log(`<b>${target.name}</b> repaired · ${was}% → 94%`,'good');
+        &#10003; authentication.test.ts, 6 passed<br>&#10003; 19/19 suite green</div></details></div>`;
+      log(`<b>${target.name}</b> repaired, ${was}% to 94%`,'good');
     }
 
     cat.state='walk';
@@ -1673,7 +1961,7 @@ export function mountCity(el, opts = {}) {
     if(S.connected)return;
     S.connected=true;
     $('connect').classList.add('gone');
-    if($('repochip'))$('repochip').innerHTML='<b>~/dev/mistral-shop</b> · connected';
+    if($('repochip'))$('repochip').innerHTML='<b>~/dev/mistral-shop</b> connected';
     log('scanning repository','sys');
     log('mistral-medium-3.5 reading project structure','code');
 
@@ -1682,7 +1970,7 @@ export function mountCity(el, opts = {}) {
       const s=MODEL.systems.find(x=>x.id===id);
       s.grow=0; S.systems.push(s);
       const a=anchor(s); burst(a.x,a.y-8,10,'spark');
-      log(s.status==='unknown'?`unreadable area found near /src`:`found <b>${s.name}</b> · ${s.files.length} files`,
+      log(s.status==='unknown'?`unreadable area found near /src`:`found <b>${s.name}</b>, ${s.files.length} files`,
           s.status==='unknown'?'bad':'');
       setHealth(computeHealth());
     },360*i+400));
@@ -1708,13 +1996,13 @@ export function mountCity(el, opts = {}) {
     const auth=()=>MODEL.systems.find(s=>s.id==='auth');
     setTimeout(()=>{select(auth());panTo(auth());toast('Every building is a real system in the repo.')},5000);
     setTimeout(()=>dispatch('repair',auth()),8000);
-    setTimeout(()=>{deselect();S.cam.z=1.5;toast('Mistral changed the repo. The city followed.')},25500);
+    setTimeout(()=>{deselect();zoomTo(1);toast('Mistral changed the repo. The city followed.')},25500);
   });
 
   /* ============================================================
      10. CAMERA + INPUT
      ============================================================ */
-  function panTo(s){const a=anchor(s);S.cam.x=a.x;S.cam.y=a.y-a.h/2}
+  function panTo(s){const a=anchor(s);panTarget(a.x,a.y-a.h/2)}
   let drag=false,moved=false,last={x:0,y:0};
   stage.addEventListener('pointerdown',e=>{
     if(e.target.closest('.hud,#ins,#connect,#zc'))return;
@@ -1726,7 +2014,8 @@ export function mountCity(el, opts = {}) {
     if(drag){
       const dx=e.clientX-last.x,dy=e.clientY-last.y;
       if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
-      S.cam.x-=dx/S.cam.z; S.cam.y-=dy/S.cam.z; last={x:e.clientX,y:e.clientY};
+      S.cam.xt-=dx/S.cam.z; S.cam.yt-=dy/S.cam.z; clampCam();
+      S.cam.x=S.cam.xt; S.cam.y=S.cam.yt; last={x:e.clientX,y:e.clientY};
     } else {
       const hit=pick(e.clientX-r.left,e.clientY-r.top);
       S.systems.forEach(s=>s.hover=(hit&&hit.id===s.id));
@@ -1754,33 +2043,33 @@ export function mountCity(el, opts = {}) {
     });
     return best;
   }
-  const MIN_ZOOM=1, MAX_ZOOM=4;
-  function setZoom(z){ S.cam.z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)); }
-  function fitToView(){ S.cam = {x:25*TS, y:18*TS, z:1.5}; }
+  /* Pan-first navigation, kept from main: the wheel pans and never zooms.
+     Zoom is the buttons and the +/- keys, one whole step per press, so a
+     trackpad flick can no longer throw the board from 1 to 4. Everything
+     routes through panTarget/zoomTo, which ease and clamp to the board. */
+  function fitToView(){ S.cam.zt=ZMIN; panTarget(16*TS,13*TS); }
   stage.addEventListener('wheel', e => {
     // Scroll over the inspector, HUD, or connect card belongs to that surface.
     // overscroll-behavior:contain stops the chain, and returning early here
     // means the map never sees the "extra" wheel delta either.
     if(e.target && e.target.closest && e.target.closest('#ins,.hud,#connect,#toast')) return;
     // Pinch-zoom on Mac touchpads and ctrl+wheel elsewhere fire wheel with
-    // ctrlKey. Swallow so the browser doesn't zoom the whole page — the map
-    // is pan-only from wheel; use +/- or the zoom buttons to zoom.
+    // ctrlKey. Swallow so the browser doesn't zoom the whole page.
     if(e.ctrlKey){ e.preventDefault(); return; }
     e.preventDefault();
     const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1;
-    S.cam.x += (e.deltaX * unit) / S.cam.z;
-    S.cam.y += (e.deltaY * unit) / S.cam.z;
+    panTarget(S.cam.xt + (e.deltaX*unit)/S.cam.zt, S.cam.yt + (e.deltaY*unit)/S.cam.zt);
   }, {passive:false});
-  $('zin').onclick=()=>setZoom(S.cam.z*1.25);
-  $('zout').onclick=()=>setZoom(S.cam.z*.8);
+  $('zin').onclick=()=>zoomTo(S.cam.zt+1);
+  $('zout').onclick=()=>zoomTo(S.cam.zt-1);
   $('zfit').onclick=()=>fitToView();
   WIN('keydown',e=>{
     if(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     if(e.key==='Escape'){deselect();S.armed=null;document.querySelectorAll('.hut').forEach(x=>x.classList.remove('armed'));stage.classList.remove('aim');return}
     if(e.key==='f'){ $('zfit').click(); return; }
     if(e.key==='0'){ e.preventDefault(); fitToView(); return; }
-    if(e.key==='+'||e.key==='='){ e.preventDefault(); setZoom(S.cam.z*1.1); return; }
-    if(e.key==='-'||e.key==='_'){ e.preventDefault(); setZoom(S.cam.z/1.1); return; }
+    if(e.key==='+'||e.key==='='){ e.preventDefault(); zoomTo(S.cam.zt+1); return; }
+    if(e.key==='-'||e.key==='_'){ e.preventDefault(); zoomTo(S.cam.zt-1); return; }
   });
 
   renderHuts(); setEnergy(S.energy); setTests(); setHealth(0);
@@ -1970,7 +2259,7 @@ export function mountCity(el, opts = {}) {
   })();
 
   /* ============================================================
-     PUBLIC API — the only surface the rest of the app touches.
+     PUBLIC API: the only surface the rest of the app touches.
      Everything above is private. Everything below is the contract.
      ============================================================ */
   const KINDS=['tower','gate','workshop','vault','district','house','watch','library','port'];
@@ -2045,6 +2334,11 @@ export function mountCity(el, opts = {}) {
         passed:(json.city&&json.city.security&&json.city.security.passed)||[]
       }));
       MODEL.systems.forEach(sys=>{ sys.grow=0; S.systems.push(sys) });
+      /* Prefer a continuous score when the scanner gives one. Falls back to the
+         checklist, and to the current score when the model carries neither. */
+      const sec=(json.city&&json.city.security)||{};
+      if(typeof sec.score==='number') setScore(1+(Math.max(0,Math.min(100,sec.score))/100)*4);
+      else if(Array.isArray(sec.passed)) setScore(Math.max(1,Math.min(5,sec.passed.length)));
       if(!S.huts.length) MODEL.huts.forEach(h=>S.huts.push(h));
       if(json.repo&&json.repo.tests){ S.tp=json.repo.tests.pass; S.tt=json.repo.tests.total; setTests(); }
       setHealth(json.city&&json.city.health!=null?json.city.health:computeHealth());
@@ -2072,7 +2366,7 @@ export function mountCity(el, opts = {}) {
         case 'agent.start': { const t=sys(e.target); if(t) dispatchLive(e.agent||'repair',t); break; }
         case 'agent.log':   log(e.text||'', e.level||''); break;
         case 'agent.edit':  log('editing '+e.file,'code'); break;
-        case 'agent.test':  log(`${e.suite||'suite'} · ${e.pass||0} passed${e.fail?', '+e.fail+' failed':''}`,
+        case 'agent.test':  log(`${e.suite||'suite'}, ${e.pass||0} passed${e.fail?', '+e.fail+' failed':''}`,
                                 e.fail?'bad':'good');
                             if(e.pass!=null){S.tp=e.pass+(S.tt-(e.pass+(e.fail||0)));setTests()} break;
         case 'agent.done':  finishLive(S.live[e.target], e); break;
@@ -2092,20 +2386,50 @@ export function mountCity(el, opts = {}) {
     },
 
     /* the level mechanic, exposed */
+    /* Checklist form, kept so existing callers keep working. Five booleans can
+       only ever produce five values, so this quantises. */
     setSecurity(passedIds){
-      const t=sysAt('tower'); if(!t) return;
-      t.passed=passedIds.slice(); t.level=Math.max(1,Math.min(5,passedIds.length));
-      t.grow=0.55;
+      const ids=(passedIds||[]).slice();
+      const lv=Math.max(1,Math.min(5,ids.length));
+      setScore(lv);
+      const t=sysAt('tower');
+      if(!t) return lv;
+      t.passed=ids; t.level=lv;
       const a=anchor(t); burst(a.x,a.y-a.h*0.6,26,'spark');
       if(S.selected&&S.selected.id==='tower') renderIns(t);
-      return t.level;
+      return lv;
     },
+
+    /* The real input. A continuous 0..100 security score, so the town can sit
+       genuinely between two eras instead of snapping between five states. */
+    setSecurityScore(score0to100){
+      /* A missing or garbage score must be ignored, not quietly demote the whole
+         town. Number(null) is 0, not NaN, so null needs its own guard. */
+      if(score0to100==null||score0to100==='') return hallLevel();
+      const raw=Number(score0to100);
+      if(!Number.isFinite(raw)) return hallLevel();
+      const p=Math.max(0,Math.min(100,raw));
+      const lv=setScore(1+(p/100)*4);
+      const t=sysAt('tower');
+      if(t){ const a=anchor(t); burst(a.x,a.y-a.h*0.6,20,'spark');
+             if(S.selected&&S.selected.id==='tower') renderIns(t); }
+      return lv;
+    },
+
+    checks(){ return CHECKS.map(c=>({id:c.id,name:c.name})) },
+    levels(){ return LEVELS.map(l=>({n:l.n,name:l.name,era:l.era,tone:l.tone,blurb:l.blurb})) },
+    securityScore(){ return Math.round(((S.score-1)/4)*100) },
+    securityLevel(){ return hallLevel() },
 
     select(id){ const t=sysAt(id); if(t) select(t); },
     deselect,
-    camera(o){ if(o.x!=null)S.cam.x=o.x; if(o.y!=null)S.cam.y=o.y; if(o.z!=null)S.cam.z=o.z; },
+    camera(o){ if(o.x!=null)S.cam.xt=o.x; if(o.y!=null)S.cam.yt=o.y;
+      if(o.z!=null)S.cam.zt=Math.max(ZMIN,Math.min(ZMAX,Math.round(o.z)));
+      clampCam();
+      if(o.snap){S.cam.x=S.cam.xt;S.cam.y=S.cam.yt;S.cam.z=S.cam.zt} },
     on(name,cb){ (S.hooks=S.hooks||{})[name]=cb; },
-    state(){ return {health:S.health,energy:S.energy,systems:S.systems.length}; },
+    state(){ return {health:S.health,energy:S.energy,systems:S.systems.length,
+      zoom:S.cam.zt, score:Math.round(((S.score-1)/4)*100), level:hallLevel()}; },
     destroy(){
       cancelAnimationFrame(S.raf);
       S.systems.forEach(x=>{ if(x.fxTimer) clearInterval(x.fxTimer) });

@@ -43,7 +43,7 @@ export type RendererModel = {
   };
   city: {
     health: number;
-    security: { passed: string[] };
+    security: { passed: string[]; score?: number };
   };
   systems: RendererSystem[];
 };
@@ -167,10 +167,27 @@ export function toRendererModel(
     },
     city: {
       health: city.city.health,
-      security: { passed: [] },
+      /* The renderer drives the whole board from this. A continuous 0..100
+         score lets the town sit genuinely between two eras; the checklist is
+         the fallback and can only ever produce five states.
+
+         CityModel v1 carries no security data yet, so this reads defensively
+         and the town stays at its current era until the contract gains a
+         `city.security.score`. The ask is one number: see mistral-city/README.md. */
+      security: readSecurity(city),
     },
     systems,
   };
+}
+
+/** Reads a security score off the model if the scan produced one. */
+function readSecurity(city: CityModel): { score?: number; passed: string[] } {
+  const raw = (city.city as { security?: { score?: number; passed?: string[] } }).security;
+  if (raw && typeof raw.score === "number" && Number.isFinite(raw.score)) {
+    return { score: Math.max(0, Math.min(100, raw.score)), passed: raw.passed ?? [] };
+  }
+  if (raw && Array.isArray(raw.passed)) return { passed: raw.passed };
+  return { passed: [] };
 }
 
 export function emptyCityModel(repositoryName: string): CityModel {

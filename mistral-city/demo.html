@@ -3,21 +3,71 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mistral City · module demo</title>
+<title>Mistral City, module demo</title>
 <style>
-  html,body{margin:0;height:100%;background:#13131C;font-family:system-ui,sans-serif}
+  html,body{margin:0;height:100%;background:#13131C;
+    font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   #city{position:absolute;inset:0}
-  #bar{position:fixed;z-index:200;left:12px;bottom:12px;display:flex;gap:6px}
-  #bar button{border:2px solid #13131C;background:#FAF8F4;font-weight:700;font-size:12px;padding:7px 11px;cursor:pointer}
+
+  /* Every selector is scoped to #dev. The renderer injects its own stylesheet
+     with .row / .acts / .seg in it, and a bare class here loses to it. */
+  #dev{
+    position:fixed;z-index:200;left:50%;top:12px;transform:translateX(-50%);
+    background:#FAF8F4;border:2px solid #13131C;box-shadow:4px 4px 0 rgba(19,19,28,.35);
+    padding:8px 10px 9px;display:flex;flex-direction:column;gap:7px;
+  }
+  #dev .r{display:flex;align-items:center;gap:8px}
+  #dev .r>h3{margin:0;font-size:11px;font-weight:700;color:#13131C;width:82px;flex-shrink:0}
+
+  #dev input[type=range]{width:210px;accent-color:#EF8934;margin:0}
+  #dev .num{font:700 12px "JetBrains Mono",monospace;width:34px;text-align:right;color:#13131C}
+  #dev .era{font-size:11px;color:#3A362F;white-space:nowrap}
+  #dev .era b{color:#13131C;font-weight:700}
+
+  #dev .seg{display:flex;border:2px solid #13131C;flex-direction:row}
+  #dev .seg>button{
+    border:0;border-right:2px solid #13131C;background:#FAF8F4;color:#13131C;
+    font:inherit;font-size:11.5px;font-weight:700;padding:4px 0;width:28px;cursor:pointer;
+  }
+  #dev .seg>button:last-child{border-right:0}
+  #dev .seg>button:hover{background:#fff}
+  #dev .seg>button[aria-pressed="true"]{background:#EF8934;color:#fff}
+
+  #dev .ac{display:flex;flex-direction:row;gap:4px}
+  #dev .ac>button{
+    border:2px solid #13131C;background:#FAF8F4;color:#13131C;
+    font:inherit;font-size:11px;font-weight:600;padding:3px 8px;cursor:pointer;
+  }
+  #dev .ac>button:hover{background:#fff}
+  #dev .ac>button.on{background:#13131C;color:#FAF8F4}
 </style>
 </head>
 <body>
 <div id="city"></div>
-<div id="bar">
-  <button id="load">setModel</button>
-  <button id="run">agent events</button>
-  <button id="lvl">setSecurity(5)</button>
+
+<div id="dev">
+  <div class="r">
+    <h3>Security</h3>
+    <input id="score" type="range" min="0" max="100" step="1" value="0">
+    <span class="num" id="num">0</span>
+    <span class="era" id="era"></span>
+  </div>
+  <div class="r">
+    <h3>Jump to era</h3>
+    <div class="seg" id="seg"></div>
+    <span class="era">whole numbers, for comparison</span>
+  </div>
+  <div class="r">
+    <h3>Scene</h3>
+    <div class="ac">
+      <button id="sweep">Sweep 0 to 100</button>
+      <button id="reload">Reload model</button>
+      <button id="replay">Replay agent run</button>
+      <button id="zfit">Fit view</button>
+    </div>
+  </div>
 </div>
+
 <script type="module">
 import { mountCity } from './city/mistral-city.js'
 
@@ -28,15 +78,15 @@ window.city = city
 
 const MODEL = {
   repo:{ tests:{ pass:12, total:14 } },
-  city:{ health:71, security:{ passed:['secrets','deps'] } },
+  city:{ health:71, security:{ score:0 } },
   systems:[
-    {id:'tower',name:'Town Hall',kind:'tower',tx:24,ty:15,health:100,status:'healthy',
+    {id:'tower',name:'Town Hall',kind:'tower',tx:16,ty:11,health:100,status:'healthy',
      blurb:'The repository itself.',connections:['auth','api']},
-    {id:'auth',name:'Authentication',kind:'gate',tx:15,ty:16,health:52,status:'broken',
+    {id:'auth',name:'Authentication',kind:'gate',tx:7,ty:12,health:52,status:'broken',
      blurb:'Handles logging in and keeping people signed in.',
      files:['src/auth/session.ts'],connections:['tower'],
      issues:[{t:'Session does not survive a refresh',d:'stored in component state only'}]},
-    {id:'api',name:'API Workshop',kind:'workshop',tx:31,ty:20,health:84,status:'warning',
+    {id:'api',name:'API Workshop',kind:'workshop',tx:22,ty:16,health:84,status:'warning',
      blurb:'Server routes.',connections:['tower']}
   ]
 }
@@ -50,10 +100,52 @@ const LOG = [
            summary:'Repair Cat fixed session persistence',
            detail:'Signed httpOnly cookie. 96% health.', files:['src/auth/session.ts']}
 ]
-document.getElementById('load').onclick = () => city.setModel(MODEL)
-document.getElementById('run').onclick  = () => city.replay(LOG)
-document.getElementById('lvl').onclick  = () => city.setSecurity(['secrets','deps','session','input','headers'])
+
+const LEVELS = city.levels()
+const slider = document.getElementById('score')
+const num = document.getElementById('num')
+const era = document.getElementById('era')
+const seg = document.getElementById('seg')
+
+LEVELS.forEach(l => {
+  const b = document.createElement('button')
+  b.textContent = l.n
+  b.title = `${l.name}, ${l.era}`
+  b.onclick = () => push(Math.round(((l.n - 1) / 4) * 100))
+  seg.appendChild(b)
+})
+
+function push(p){
+  slider.value = p
+  city.setSecurityScore(p)
+  num.textContent = p
+  const s = 1 + (p / 100) * 4
+  const f = s - Math.floor(s)
+  if (f < 0.08 || f > 0.92) {
+    const at = LEVELS[Math.round(s) - 1]
+    era.innerHTML = `<b>${at.name}</b>, ${at.era.toLowerCase()}`
+  } else {
+    const base = Math.floor(s)
+    era.innerHTML = `<b>${LEVELS[base - 1].name}</b> becoming <b>${LEVELS[base].name}</b>`
+  }
+  ;[...seg.children].forEach((b, i) => b.setAttribute('aria-pressed', String(i + 1 === Math.round(s))))
+}
+
+slider.oninput = () => push(+slider.value)
+
+let sweeping = null
+document.getElementById('sweep').onclick = e => {
+  if (sweeping) { clearInterval(sweeping); sweeping = null; e.target.classList.remove('on'); return }
+  e.target.classList.add('on')
+  let p = 0
+  sweeping = setInterval(() => { p = (p + 4) % 104; push(Math.min(100, p)) }, 260)
+}
+document.getElementById('reload').onclick = () => { city.setModel(MODEL); push(+slider.value) }
+document.getElementById('replay').onclick = () => city.replay(LOG)
+document.getElementById('zfit').onclick   = () => city.camera({ x: 16*16, y: 13*16, z: 1 })
+
 city.setModel(MODEL)
+push(0)
 </script>
 </body>
 </html>

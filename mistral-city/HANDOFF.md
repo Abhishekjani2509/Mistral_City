@@ -23,7 +23,10 @@ are cats. It is done and it works. It is not a mockup.
    - **Ear roof + orange ramp = Mistral runs it.** Scenery buildings get flat or plain gable
      roofs in grey, brown or blue. This is how a viewer knows what is clickable.
    - **Collar + tool = agent.** Town cats are the same body with no collar, muted fur.
-3. **Integer zoom only** (1 to 4). Fractional scale on pixel art looks like a compression artifact.
+3. **Integer zoom only** (1 to 4). Fractional scale on pixel art looks like a compression
+   artifact. The code did not honour this: it multiplied by 1.11 per wheel event and sat on
+   fractional values. It now steps to whole numbers and eases between them, so it comes to
+   rest on an integer but still moves like a map.
 4. **The camera never moves on its own during a demo.** The presenter drives.
 5. **Sprites are anchored bottom-centre on a 16px grid**, drawn upright, never skewed.
 
@@ -37,6 +40,37 @@ are cats. It is done and it works. It is not a mockup.
 | Security checks | ids of passing checks | `city.setSecurity(ids)` |
 
 Shapes are in `README.md`, working payloads in `examples/`.
+
+## Changed since the first handoff
+
+Rebased onto `main`, so Guard Cat, the scripted scout run and the HIDDEN systems stay
+removed and the `onConnect` / `onDispatch` hooks are untouched. Only the look changed.
+
+1. **Security drives the whole board, continuously.** Not five steps: every tile and site
+   has a fixed threshold and flips when the score passes it, so 3.7 is a genuine mix of two
+   eras. Thresholds are mostly distance from the Town Hall, so upgrades radiate outward.
+   `setSecurityScore(0..100)` is the input. See `README.md`.
+2. **The board shrank from 52 x 36 to 34 x 29.** About half was empty grass. Content moved
+   by (-8, -4) and the pond moved into the free pocket at the bottom left.
+3. **Ground is themed everywhere, not only the roads.** The old `(x*3+y*7)%4` variant pick
+   is a diagonal lattice: invisible while all four variants were grass, an obvious
+   checkerboard the moment one became a paving slab. Replaced with a hashed, clustered map.
+4. **Scenery buildings per era.** They must never use an ear roof or the orange ramp or they
+   stop reading as scenery. `mkBuilding` defaults `flat` and `gable` to the orange ramp, so
+   every scenery recipe names its own grey, brown or blue `bands`.
+5. **Zoom is stepped, eased and pointer-anchored.** One wheel gesture is one step.
+6. **Typography.** Letterspaced uppercase labels, grey label text and hairlines floating
+   inside padded cards are gone. Tick and cross are pixel SVG built from row strings, so
+   still no image files.
+7. **`topiary` now exists.** `RING` era 5 referenced it twice with no sprite, so the
+   `if(!sp)return` guard silently dropped two props every frame.
+
+## Blocked on the contract
+
+`CityModel` v1 carries no security data, so nothing calls into the score and the town sits
+where it is. `src/integration/mistral-city.ts` already reads `city.security.score` when
+present, so this lights up the moment the field exists. The exact ask is in `README.md`
+under "What the renderer still needs". It is one number.
 
 ## Next tasks, in priority order
 
@@ -57,7 +91,11 @@ Shapes are in `README.md`, working payloads in `examples/`.
 - **`demo.html` needs an http server**, not `file://`. ES modules are blocked over file.
 - **React 18 StrictMode** mounts, unmounts and remounts in dev. `destroy()` in the effect
   cleanup is mandatory or two render loops run at once and it reads as a perf bug.
-- **90% of draw calls are ground tiles** redrawn every frame (~1,260 of 1,407). If the demo
+- **Frame-count timing is a trap.** Anything paced by frames runs at half speed on a 30 Hz
+  projector and stops entirely on a hidden tab, where `requestAnimationFrame` does not fire.
+  The zoom cooldown, the camera easing and the score wave all use `performance.now()`. Do
+  not reintroduce a frame counter as a clock.
+- **90% of draw calls are ground tiles** redrawn every frame (~1,100 at fit view). If the demo
   machine or the projector is slow, pre-render the tilemap into one offscreen canvas and blit a
   region: drops to under 150 calls, about 20 minutes of work. Do not do it pre-emptively.
 - **External displays often force 30Hz.** Anything tuned by frame count rather than elapsed time
