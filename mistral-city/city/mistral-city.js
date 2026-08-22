@@ -136,6 +136,7 @@ button{font-family:inherit}
   position:absolute;right:14px;top:14px;width:318px;z-index:50;
   transform:translateX(calc(100% + 24px));transition:transform .3s cubic-bezier(.2,.9,.3,1);
   max-height:calc(100% - 28px);min-height:0;display:flex;flex-direction:column;
+  overscroll-behavior:contain;
 }
 #ins.on{transform:none}
 .ih{padding:11px 13px 11px;background:var(--ink);color:var(--paper);position:relative}
@@ -144,7 +145,7 @@ button{font-family:inherit}
 .isub{font-size:12px;color:#B9BBC9;margin-top:5px;line-height:1.45}
 .x{position:absolute;right:8px;top:7px;width:22px;height:22px;border:0;background:transparent;color:#8A8CA0;cursor:pointer;font-size:15px}
 .x:hover{color:#fff}
-.ib{overflow-y:auto;min-height:0;flex:1 1 auto;padding:11px 13px}
+.ib{overflow-y:auto;overscroll-behavior:contain;min-height:0;flex:1 1 auto;padding:11px 13px}
 .srow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .chip{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border:2px solid var(--ink);color:#fff}
 .hn{font-family:"Silkscreen",monospace;font-size:18px;margin-left:auto}
@@ -266,7 +267,7 @@ const CITY_HTML = `
       <button class="btn" id="zout">&minus;</button>
       <button class="btn" id="zfit">&#9633;</button>
     </div>
-    <div id="hint">drag to pan &middot; scroll to zoom &middot; click a building</div>
+    <div id="hint">drag or scroll to pan &middot; +/- to zoom &middot; 0 to fit &middot; click a building</div>
 
     <aside class="card" id="ins">
       <div class="ih"><button class="x" id="ix">&times;</button>
@@ -1104,7 +1105,7 @@ export function mountCity(el, opts = {}) {
     systems:[],huts:[],selected:null,armed:null,busy:{},connected:false,
     energy:MODEL.city.energy,knowledge:MODEL.city.knowledge,health:0,
     tp:MODEL.repo.tests.pass,tt:MODEL.repo.tests.total,
-    cam:{x:25*TS,y:18*TS,z:2},cats:[],ambient:[],fx:[],scaffolds:[],revealed:false,tick:0
+    cam:{x:25*TS,y:18*TS,z:2.6},cats:[],ambient:[],fx:[],scaffolds:[],revealed:false,tick:0
   };
 
   const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
@@ -1751,14 +1752,33 @@ export function mountCity(el, opts = {}) {
     });
     return best;
   }
-  stage.addEventListener('wheel',e=>{e.preventDefault();
-    S.cam.z=Math.max(1,Math.min(4,S.cam.z*(e.deltaY>0?.9:1.11)));},{passive:false});
-  $('zin').onclick=()=>S.cam.z=Math.min(4,S.cam.z*1.25);
-  $('zout').onclick=()=>S.cam.z=Math.max(1,S.cam.z*.8);
-  $('zfit').onclick=()=>{S.cam={x:25*TS,y:18*TS,z:1.5}};
+  const MIN_ZOOM=1, MAX_ZOOM=4;
+  function setZoom(z){ S.cam.z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)); }
+  function fitToView(){ S.cam = {x:25*TS, y:18*TS, z:1.5}; }
+  stage.addEventListener('wheel', e => {
+    // Scroll over the inspector, HUD, or connect card belongs to that surface.
+    // overscroll-behavior:contain stops the chain, and returning early here
+    // means the map never sees the "extra" wheel delta either.
+    if(e.target && e.target.closest && e.target.closest('#ins,.hud,#connect,#toast')) return;
+    // Pinch-zoom on Mac touchpads and ctrl+wheel elsewhere fire wheel with
+    // ctrlKey. Swallow so the browser doesn't zoom the whole page — the map
+    // is pan-only from wheel; use +/- or the zoom buttons to zoom.
+    if(e.ctrlKey){ e.preventDefault(); return; }
+    e.preventDefault();
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1;
+    S.cam.x += (e.deltaX * unit) / S.cam.z;
+    S.cam.y += (e.deltaY * unit) / S.cam.z;
+  }, {passive:false});
+  $('zin').onclick=()=>setZoom(S.cam.z*1.25);
+  $('zout').onclick=()=>setZoom(S.cam.z*.8);
+  $('zfit').onclick=()=>fitToView();
   WIN('keydown',e=>{
-    if(e.key==='Escape'){deselect();S.armed=null;document.querySelectorAll('.hut').forEach(x=>x.classList.remove('armed'));stage.classList.remove('aim')}
-    if(e.key==='f')$('zfit').click();
+    if(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if(e.key==='Escape'){deselect();S.armed=null;document.querySelectorAll('.hut').forEach(x=>x.classList.remove('armed'));stage.classList.remove('aim');return}
+    if(e.key==='f'){ $('zfit').click(); return; }
+    if(e.key==='0'){ e.preventDefault(); fitToView(); return; }
+    if(e.key==='+'||e.key==='='){ e.preventDefault(); setZoom(S.cam.z*1.1); return; }
+    if(e.key==='-'||e.key==='_'){ e.preventDefault(); setZoom(S.cam.z/1.1); return; }
   });
 
   renderHuts(); setEnergy(S.energy); setTests(); setHealth(0);
