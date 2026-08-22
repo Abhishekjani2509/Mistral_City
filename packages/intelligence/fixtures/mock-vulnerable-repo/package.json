@@ -1,0 +1,6 @@
+{
+  "name": "mistral-city-vulnerable-demo",
+  "private": true,
+  "description": "Deliberately insecure local fixture. Never deploy.",
+  "dependencies": { "express": "4.18.2", "jsonwebtoken": "9.0.0", "pg": "8.11.0", "react": "18.2.0" }
+}
