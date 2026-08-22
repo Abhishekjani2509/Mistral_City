@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mistral.city/schemas/cat-dispatch.v1.json",
+  "title": "Mistral City Cat Dispatch Request",
+  "type": "object",
+  "required": ["schema", "runId", "agent", "systemId", "issue"],
+  "properties": {
+    "schema": { "const": "mistral.city.cat-dispatch/v1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "agent": { "enum": ["repair", "scout", "guard"] },
+    "systemId": { "type": "string", "minLength": 1 },
+    "issue": { "$ref": "cat-events.schema.json#/$defs/issue" },
+    "context": {
+      "type": "object",
+      "properties": {
+        "relatedSystemIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggestedCommands": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "relevantFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
