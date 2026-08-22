@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   EventCollector,
@@ -189,6 +190,7 @@ test("Scout performs separate deep discovery and lifts fog", async () => {
 
 test("committed snapshot has the calibrated hero system and non-degenerate tiers", async () => {
   const snapshot = await loadDemoSnapshot();
+  assert.deepEqual(snapshot.city, { health: 84, status: "warning" });
   assert.equal(snapshot.systems.find((system) => system.id === "auth").status, "broken");
   assert.ok(snapshot.systems.find((system) => system.id === "search").status === "unknown");
   assert.equal(snapshot.schema, "mistral.city-model/v1");
@@ -208,6 +210,22 @@ test("CityModel validation rejects a connection with an unknown endpoint", () =>
 test("CityModel validation rejects leaked internal analysis fields", async () => {
   const snapshot = await loadDemoSnapshot();
   assert.throws(() => validateCityModel({ ...snapshot, warnings: [] }), /unsupported fields: warnings/);
+});
+
+test("published CityModel JSON Schema matches the frozen renderer contract", async () => {
+  const path = new URL("../contracts/city-model.schema.json", import.meta.url);
+  const schema = JSON.parse(await readFile(path, "utf8"));
+  assert.equal(schema.properties.schema.const, "mistral.city-model/v1");
+  assert.equal(schema.additionalProperties, false);
+  assert.deepEqual(schema.required, ["schema", "repository", "city", "systems", "connections"]);
+  assert.deepEqual(Object.keys(schema.$defs.CitySystem.properties).sort(), [
+    "confidence", "description", "entrypoints", "files", "health", "healthSignals", "id", "issues", "kind", "name", "status",
+  ]);
+  assert.deepEqual(schema.$defs.HealthStatus.enum, ["healthy", "warning", "broken", "unknown"]);
+  assert.deepEqual(schema.$defs.CityConnection.properties.kind.enum, ["calls", "reads", "writes", "authenticates", "tests", "depends_on"]);
+  const sample = await loadDemoSnapshot();
+  assert.equal(sample.schema, schema.properties.schema.const);
+  assert.ok(sample.systems.some((system) => system.id === "auth"));
 });
 
 test("OWASP WSTG 50 harness exercises the mock codebase end to end", async () => {

@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "bin": { "city-intel": "dist/cli.js" },
-  "exports": { ".": "./dist/index.js" },
+  "exports": {
+    ".": "./dist/index.js",
+    "./city-model.schema.json": "./contracts/city-model.schema.json"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "city-intel": "npm run build --silent && node dist/cli.js",

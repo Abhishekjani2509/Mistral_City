@@ -64,6 +64,7 @@ These definitions are part of the frontend contract and must not be redefined do
 
 ## Public contract
 
+- The frozen machine-readable contract is `packages/intelligence/contracts/city-model.schema.json`; the canonical stable sample is `packages/intelligence/fixtures/demo-repo-snapshot.json`.
 - `scanRepository(...)` produces the frozen `mistral.city-model/v1` `CityModel`; scanner details, source samples, Mistral grades, and building-type hints stay internal.
 - The renderer receives systems with `kind`, `description`, `healthSignals`, `issues`, and `confidence`, plus evidence-backed `connections`. It never needs to read source code or interpret quality tiers.
 - `validateCityModel(...)` rejects duplicate system IDs, invalid connection endpoints, invalid metadata, and non-repository-relative paths.
