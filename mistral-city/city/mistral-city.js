@@ -568,56 +568,56 @@ export function mountCity(el, opts = {}) {
     repo:{name:'mistral-shop', tests:{pass:18,total:19}},
     city:{energy:120, knowledge:4},
     systems:[
-      {id:'tower',name:'Town Hall',kind:'tower',tx:24,ty:15,health:100,status:'healthy',level:2,
+      {id:'tower',name:'Town Hall',kind:'tower',tx:16,ty:11,health:100,status:'healthy',level:2,
        passed:['secrets','deps'],
        blurb:'The repository itself. Its level is how secure this project is.',
        files:['package.json','next.config.js','middleware.ts'],
        connections:['auth','dashboard','api','docs'],issues:[]},
-      {id:'auth',name:'Authentication',kind:'gate',tx:15,ty:16,health:64,status:'broken',
+      {id:'auth',name:'Authentication',kind:'gate',tx:7,ty:12,health:64,status:'broken',
        blurb:'Handles logging in and keeping people signed in between visits.',
        files:['src/auth/session.ts','src/app/login/page.tsx','src/auth/guard.ts'],
        connections:['tower','profiles','db'],
        issues:[{t:'Session does not survive a refresh',
          d:'authentication.test.ts, "session should persist after refresh" fails. Sessions live in component state only.'}]},
-      {id:'dashboard',name:'Dashboard',kind:'district',tx:33,ty:12,health:92,status:'healthy',
+      {id:'dashboard',name:'Dashboard',kind:'district',tx:25,ty:8,health:92,status:'healthy',
        blurb:'The screens a signed-in customer sees after they log in.',
        files:['src/app/dashboard/*.tsx','src/components/Chart.tsx'],
        connections:['tower','api','profiles'],issues:[]},
-      {id:'api',name:'API Workshop',kind:'workshop',tx:30,ty:20,health:81,status:'warning',
+      {id:'api',name:'API Workshop',kind:'workshop',tx:22,ty:16,health:81,status:'warning',
        blurb:'The server routes the app calls to read and change data.',
        files:['src/app/api/orders/route.ts','src/app/api/cart/route.ts'],
        connections:['tower','db','dashboard','payments'],
        issues:[{w:1,t:'Thin test coverage on /api/cart',
          d:'3 of 9 routes have no test. A change here could break checkout without anything turning red.'}]},
-      {id:'db',name:'Data Vault',kind:'vault',tx:21,ty:24,health:95,status:'healthy',
+      {id:'db',name:'Data Vault',kind:'vault',tx:13,ty:20,health:95,status:'healthy',
        blurb:'Where orders, users and products are stored.',
        files:['prisma/schema.prisma','src/lib/db.ts'],connections:['api','auth','profiles'],issues:[]},
-      {id:'profiles',name:'User Profiles',kind:'house',tx:14,ty:23,health:88,status:'healthy',
+      {id:'profiles',name:'User Profiles',kind:'house',tx:6,ty:19,health:88,status:'healthy',
        blurb:'Names, addresses and preferences for each customer.',
        files:['src/app/profile/page.tsx','src/lib/user.ts'],connections:['auth','db','dashboard'],issues:[]},
-      {id:'tests',name:'Test Tower',kind:'watch',tx:36,ty:16,health:90,status:'healthy',
+      {id:'tests',name:'Test Tower',kind:'watch',tx:28,ty:12,health:90,status:'healthy',
        blurb:'The checks that run before anything ships. 18 of 19 pass right now.',
        files:['tests/authentication.test.ts','tests/api.test.ts'],connections:['tower','api'],issues:[]},
-      {id:'docs',name:'Library',kind:'library',tx:14,ty:10,health:70,status:'warning',
+      {id:'docs',name:'Library',kind:'library',tx:6,ty:6,health:70,status:'warning',
        blurb:'The written explanation of how this project works.',
        files:['README.md','docs/setup.md'],connections:['tower'],
        issues:[{w:1,t:'Setup guide is out of date',
          d:'docs/setup.md still lists the old env vars. A new contributor hits a wall on step one.'}]},
-      {id:'payments',name:'Unknown ground',kind:'port',tx:34,ty:26,health:0,status:'unknown',
+      {id:'payments',name:'Unknown ground',kind:'port',tx:26,ty:22,health:0,status:'unknown',
        blurb:'Nobody has read this part of the codebase yet.',
        files:[],connections:['api'],issues:[]}
     ],
     huts:[
-      {id:'h-scout',kind:'hut',agent:'scout',tx:20,ty:8},
-      {id:'h-repair',kind:'hut',agent:'repair',tx:25,ty:8},
-      {id:'h-guard',kind:'hut',agent:'guard',tx:30,ty:8}
+      {id:'h-scout',kind:'hut',agent:'scout',tx:12,ty:4},
+      {id:'h-repair',kind:'hut',agent:'repair',tx:17,ty:4},
+      {id:'h-guard',kind:'hut',agent:'guard',tx:22,ty:4}
     ]
   };
   const HIDDEN=[
-    {id:'stripe',name:'Stripe Terminal',kind:'port',tx:39,ty:25,health:86,status:'healthy',
+    {id:'stripe',name:'Stripe Terminal',kind:'port',tx:31,ty:21,health:86,status:'healthy',
      blurb:'Talks to Stripe to actually take money.',files:['src/lib/stripe.ts'],
      connections:['payments'],issues:[]},
-    {id:'checkout',name:'Checkout API',kind:'workshop',tx:32,ty:29,health:74,status:'warning',
+    {id:'checkout',name:'Checkout API',kind:'workshop',tx:24,ty:25,health:74,status:'warning',
      blurb:'Turns a cart into a paid order.',files:['src/app/api/checkout/route.ts'],
      connections:['payments','api'],
      issues:[{w:1,t:'No test covers a declined card',d:'The failure path has never been exercised.'}]}
@@ -637,15 +637,59 @@ export function mountCity(el, opts = {}) {
     hut:     {w:22,h:20,roof:'ears',roofH:8,wc:2,wr:1,dw:5,wall:'b',shade:'B'}
   };
 
+  /* Scenery buildings for the rest of the town, one set per level, so the era
+     shows up everywhere and not only on the Town Hall plot. These are smaller
+     than every real system on purpose.
+
+     Art rule 2 applies hard here: no ear roofs and no orange ramp, or a viewer
+     cannot tell scenery from a system they can click. Both 'flat' and 'gable'
+     default to the orange bands inside mkBuilding, so every recipe below names
+     its own grey, brown or blue bands. */
+  const STONE=['G','g','h'], WOOD=['B','b','v'], SLATE=['h','G','g'], BLUE=['U','u','U'];
+  const TOWNSFOLK=[
+   /*1 ruins        */ [{w:18,h:17,roof:'gable',roofH:6,win:false,door:false,wall:'g',shade:'G',bands:STONE},
+                        {w:15,h:14,roof:'gable',roofH:5,win:false,door:false,wall:'v',shade:'b',bands:WOOD},
+                        {w:21,h:15,roof:'flat', roofH:4,win:false,door:false,wall:'g',shade:'G',bands:STONE}],
+   /*2 timber shacks*/ [{w:20,h:15,roof:'gable',roofH:6,wc:1,wr:1,dw:4,wall:'b',shade:'B',bands:WOOD},
+                        {w:16,h:13,roof:'gable',roofH:5,wc:1,wr:1,dw:3,wall:'v',shade:'b',bands:WOOD},
+                        {w:23,h:14,roof:'gable',roofH:5,wc:2,wr:1,dw:4,wall:'b',shade:'B',bands:WOOD}],
+   /*3 plaster      */ [{w:22,h:17,roof:'gable',roofH:6,wc:2,wr:1,dw:4,wall:'c',shade:'n',bands:WOOD},
+                        {w:19,h:15,roof:'gable',roofH:5,wc:2,wr:1,dw:4,wall:'n',shade:'N',bands:BLUE},
+                        {w:25,h:16,roof:'gable',roofH:6,wc:3,wr:1,dw:4,wall:'c',shade:'n',bands:STONE}],
+   /*4 concrete     */ [{w:24,h:26,roof:'flat',roofH:4,wc:3,wr:3,dw:5,wall:'g',shade:'G',bands:SLATE},
+                        {w:20,h:19,roof:'flat',roofH:4,wc:2,wr:2,dw:4,wall:'n',shade:'N',bands:SLATE},
+                        {w:27,h:22,roof:'flat',roofH:4,wc:3,wr:2,dw:5,wall:'g',shade:'G',bands:BLUE}],
+   /*5 towers       */ [{w:22,h:36,roof:'flat',roofH:4,wc:2,wr:5,dw:5,wall:'g',shade:'G',bands:SLATE},
+                        {w:27,h:25,roof:'flat',roofH:4,wc:3,wr:3,dw:5,wall:'n',shade:'N',bands:BLUE},
+                        {w:18,h:42,roof:'flat',roofH:4,wc:2,wr:6,dw:4,wall:'g',shade:'G',bands:SLATE}]
+  ];
+  /* level 1 is a ruin, so knock holes in it the way the damaged systems are done */
+  function ruinRows(rows,seed){
+    const g=rows.map(r=>r.split(''));
+    for(let y=0;y<g.length;y++)for(let x=0;x<g[y].length;x++){
+      const c=g[y][x]; if(c==='.'||c==='#') continue;
+      const v=rnd(x*3.1+y*7.7+seed);
+      if(y<3 && v>0.68) g[y][x]='.';        // roof holed, not erased
+      else if(v>0.88)   g[y][x]= v>0.96?'.':'s';
+    }
+    return toRows(g);
+  }
+
   /* ============================================================
      3. WORLD / TILEMAP
      ============================================================ */
-  const TS=16, MW=52, MH=36;
+  const TS=16, MW=36, MH=30;
   const map=[];           // 0 grass, 1 dirt path, 2 dark grass, 3 flowers, 4 water
   function rnd(s){let x=Math.sin(s)*10000;return x-Math.floor(x)}
-  for(let y=0;y<MH;y++){map[y]=[];for(let x=0;x<MW;x++){
+  const vmap=[];          // which of the 4 tile variants each cell uses
+  for(let y=0;y<MH;y++){map[y]=[];vmap[y]=[];for(let x=0;x<MW;x++){
     const n=rnd(x*7.3+y*13.1);
     map[y][x]= n>0.93?3 : n>0.72?2 : 0;
+    /* Coarse value first, so paving and planting form patches instead of
+       single-tile confetti, with a fine value breaking up the block edges. */
+    const coarse=rnd(Math.floor(x/3)*5.13+Math.floor(y/3)*8.71);
+    const fine=rnd(x*4.77+y*9.13+0.5);
+    vmap[y][x]= Math.floor((fine>0.74?fine:coarse)*4)%4;
   }}
   function carve(ax,ay,bx,by){
     let x=ax,y=ay;
@@ -653,11 +697,11 @@ export function mountCity(el, opts = {}) {
     while(y!==by){map[y][x]=1;y+=y<by?1:-1}
     map[y][x]=1;
   }
-  [...MODEL.systems,...MODEL.huts].forEach(s=>{ if(s.id!=='tower') carve(24,17,s.tx,s.ty+1) });
-  HIDDEN.forEach(s=>carve(30,21,s.tx,s.ty+1));
+  [...MODEL.systems,...MODEL.huts].forEach(s=>{ if(s.id!=='tower') carve(16,13,s.tx,s.ty+1) });
+  HIDDEN.forEach(s=>carve(22,17,s.tx,s.ty+1));
   /* a pond, because stardew */
-  for(let y=28;y<34;y++)for(let x=6;x<16;x++){
-    const d=Math.hypot((x-11)/5,(y-31)/2.6); if(d<1)map[y][x]=4;
+  for(let y=22;y<29;y++)for(let x=1;x<14;x++){
+    const d=Math.hypot((x-7)/5.4,(y-25.5)/2.6); if(d<1)map[y][x]=4;
   }
 
   /* tile art */
@@ -713,42 +757,94 @@ export function mountCity(el, opts = {}) {
      re-skin every ground tile, every prop and the light instead.
      ------------------------------------------------------------ */
   const TILE_THEME=[
-   /*1 overgrown  */ {grass:'z',fleck:'A',dark:'z',dfleck:'l',path:'d',pfleck:'z',flower:'l',fleck2:'L',water:'q',back:'#2C3B22'},
-   /*2 cleared    */ {grass:'a',fleck:'A',dark:'A',dfleck:'z',path:'d',pfleck:'D',flower:'y',fleck2:'o',water:'q',back:'#3E5A2A'},
-   /*3 built      */ {grass:'a',fleck:'6',dark:'A',dfleck:'a',path:'g',pfleck:'G',flower:'y',fleck2:'o',water:'q',back:'#4E7233'},
-   /*4 developed  */ {grass:'6',fleck:'7',dark:'a',dfleck:'6',path:'1',pfleck:'2',flower:'9',fleck2:'8',water:'q',back:'#5C7C3A'},
-   /*5 fortified  */ {grass:'7',fleck:'6',dark:'6',dfleck:'7',path:'2',pfleck:'3',flower:'8',fleck2:'9',water:'Q',back:'#66883F'}
+   /*1 overgrown  */ {grass:'z',fleck:'A',dark:'z',dfleck:'l',path:'d',pfleck:'z',flower:'l',fleck2:'L',water:'q',
+                      slab:'g',seam:'G',accent:'l',back:'#2C3B22'},
+   /*2 cleared    */ {grass:'a',fleck:'A',dark:'A',dfleck:'z',path:'d',pfleck:'D',flower:'y',fleck2:'o',water:'q',
+                      slab:'g',seam:'G',accent:'y',back:'#3E5A2A'},
+   /*3 built      */ {grass:'a',fleck:'6',dark:'A',dfleck:'a',path:'g',pfleck:'G',flower:'y',fleck2:'o',water:'q',
+                      slab:'g',seam:'h',accent:'o',back:'#4E7233'},
+   /*4 developed  */ {grass:'6',fleck:'7',dark:'a',dfleck:'6',path:'3',pfleck:'1',flower:'9',fleck2:'8',water:'q',
+                      slab:'1',seam:'3',accent:'8',back:'#6E6559'},
+   /*5 fortified  */ {grass:'7',fleck:'6',dark:'6',dfleck:'7',path:'1',pfleck:'3',flower:'8',fleck2:'9',water:'Q',
+                      slab:'2',seam:'3',accent:'8',back:'#8A8074'}
   ];
-  function themedTile(lv,kind,seed){
-    const t=TILE_THEME[lv-1], g=grid(TS,TS);
-    box(g,0,0,TS,TS, kind===1?t.path : kind===4?t.water : kind===2?t.dark : t.grass);
-    if(kind===0||kind===2||kind===3){
-      const fl = kind===2?t.dfleck:t.fleck;
-      for(let i=0;i<9;i++){
-        const x=Math.floor(rnd(seed+i*3.7)*TS), y=Math.floor(rnd(seed+i*5.1+1)*TS);
-        g[y][x]=fl; if(rnd(seed+i)>0.6&&g[y+1]) g[y+1][x]=fl;
+
+  /* What the ground OUTSIDE the roads looks like, per level. Paving only the
+     roads left level 5 as a motorway through a meadow. By the top level the
+     board should read as a built surface with planted squares in it, not as
+     grass with paths on it, so the mix walks from all-wild to nearly all-slab.
+     Indexed [level][tilekind][variant]; kinds are 0 grass, 2 dark grass, 3 flowers. */
+  const GROUND_MIX={
+   1:{0:['wild','wild','moss','wild'],       2:['moss','wild','moss','wild'],       3:['bramble','wild','bramble','moss']},
+   2:{0:['grass','grass','tuft','grass'],    2:['tuft','grass','tuft','grass'],     3:['flower','grass','flower','tuft']},
+   3:{0:['grass','slab','grass','tuft'],     2:['grass','slab','tuft','slab'],      3:['flower','slab','planter','grass']},
+   4:{0:['slab','slab','grass','slabSeam'],  2:['slabSeam','slab','slab','planter'],  3:['slabAccent','slab','planter','slab']},
+   5:{0:['slab','slabSeam','slab','slab'],   2:['slabSeam','slab','slab','slabAccent'],3:['planter','slabAccent','slabSeam','planter']}
+  };
+
+  function paintGround(g,style,t,seed){
+    const scatter=(ch,count,jitter)=>{
+      for(let i=0;i<count;i++){
+        const x=Math.floor(rnd(seed+i*3.7+(jitter||0))*TS), y=Math.floor(rnd(seed+i*5.1+1+(jitter||0))*TS);
+        g[y][x]=ch; if(rnd(seed+i)>0.6&&g[y+1]) g[y+1][x]=ch;
       }
-      if(kind===3){
+    };
+    switch(style){
+      case 'wild':    box(g,0,0,TS,TS,t.grass); scatter(t.fleck,11); scatter(t.dfleck,5,9); break;
+      case 'moss':    box(g,0,0,TS,TS,t.dark);  scatter(t.dfleck,12); break;
+      case 'bramble': box(g,0,0,TS,TS,t.grass); scatter(t.dfleck,9); scatter(t.fleck2,4,3); break;
+      case 'grass':   box(g,0,0,TS,TS,t.grass); scatter(t.fleck,9); break;
+      case 'tuft':    box(g,0,0,TS,TS,t.grass); scatter(t.fleck,7); scatter(t.dark,4,5); break;
+      case 'flower': {
+        box(g,0,0,TS,TS,t.grass); scatter(t.fleck,7);
         const x=4+Math.floor(rnd(seed)*7), y=4+Math.floor(rnd(seed+2)*7);
         box(g,x,y,2,2,t.flower); box(g,x-1,y+1,1,1,t.fleck2); box(g,x+2,y+1,1,1,t.fleck2);
+        break;
       }
+      case 'slab':
+        box(g,0,0,TS,TS,t.slab);
+        scatter(t.seam,3,7);                        // wear, so it is not a flat fill
+        break;
+      case 'slabSeam':
+        box(g,0,0,TS,TS,t.slab);
+        box(g,0,0,TS,1,t.seam); box(g,0,0,1,TS,t.seam);
+        break;
+      case 'slabAccent':
+        box(g,0,0,TS,TS,t.slab);
+        box(g,0,0,TS,1,t.seam); box(g,0,0,1,TS,t.seam);
+        box(g,4,4,8,8,t.accent);
+        break;
+      case 'planter':                               // greenery kept inside the pavement
+        box(g,0,0,TS,TS,t.slab);
+        box(g,0,0,TS,1,t.seam); box(g,0,0,1,TS,t.seam);
+        box(g,3,3,10,10,t.seam);
+        box(g,4,4,8,8,t.grass);
+        scatter(t.fleck,3,11);
+        break;
     }
-    if(kind===1){
+  }
+
+  function themedTile(lv,kind,seed,variant){
+    const t=TILE_THEME[lv-1], g=grid(TS,TS);
+    if(kind===1){                                   // roads
+      box(g,0,0,TS,TS,t.path);
       for(let i=0;i<11;i++){
         const x=Math.floor(rnd(seed+i*2.1)*TS), y=Math.floor(rnd(seed+i*4.3+9)*TS);
         g[y][x]= rnd(seed+i)>0.5 ? t.pfleck : (lv>=4?t.pfleck:'f');
       }
-      if(lv>=4){ box(g,0,0,TS,1,'3'); box(g,0,0,1,TS,'3'); }   // slab seams
-      if(lv===5){ for(let x=2;x<TS-2;x+=6) box(g,x,7,3,1,'8'); } // painted centre line
-      if(lv<=2){ for(let i=0;i<4;i++){                          // weeds through the dirt
+      if(lv>=4){ box(g,0,0,TS,1,'3'); box(g,0,0,1,TS,'3'); }
+      if(lv===5){ for(let x=2;x<TS-2;x+=6) box(g,x,7,3,1,'8'); }
+      if(lv<=2){ for(let i=0;i<4;i++){
         const x=Math.floor(rnd(seed+i*6.1)*TS), y=Math.floor(rnd(seed+i*8.3)*TS);
         g[y][x]= lv===1?'l':'z'; } }
-    }
-    if(kind===4){
+    } else if(kind===4){                            // water
+      box(g,0,0,TS,TS,t.water);
       for(let i=0;i<6;i++){
         const x=Math.floor(rnd(seed+i*3.1)*TS), y=Math.floor(rnd(seed+i*2.9)*TS);
         box(g,x,y,3,1, lv===5?'q':'Q');
       }
+    } else {
+      paintGround(g, GROUND_MIX[lv][kind][variant], t, seed);
     }
     return bake(toRows(g));
   }
@@ -757,7 +853,7 @@ export function mountCity(el, opts = {}) {
     lv=Math.max(1,Math.min(5,lv|0));
     if(!THEME_TILES[lv]){
       const a=[[],[],[],[],[]];
-      for(let k=0;k<5;k++)for(let v=0;v<4;v++) a[k][v]=themedTile(lv,k,v*31.7+k*11.3);
+      for(let k=0;k<5;k++)for(let v=0;v<4;v++) a[k][v]=themedTile(lv,k,v*31.7+k*11.3,v);
       THEME_TILES[lv]=a;
     }
     return THEME_TILES[lv];
@@ -809,19 +905,34 @@ export function mountCity(el, opts = {}) {
    ['tree','sapling','planter','steellamp','bollard','bench','grate','container','crate'],
    ['sapling','topiary','steellamp','bollard','planter','bench','container','pylon','grate','antenna']
   ];
-  const PROP_COUNT=[52,46,48,54,58];
+  const PROP_COUNT=[46,40,42,44,46];
+  const HOUSE_COUNT=[13,14,15,16,17];
   const PROPS=[];
   function rollProps(lv){
     lv=Math.max(1,Math.min(5,lv|0));
     const vocab=PROP_VOCAB[lv-1].filter(k=>SPR[k]);
     if(!vocab.length) return;
     PROPS.length=0;
-    const total=PROP_COUNT[lv-1];
-    for(let i=0;i<total;i++){
+    const taken=[];
+    const clearOf=(x,y,r)=> !taken.some(t=>Math.abs(t[0]-x)<r&&Math.abs(t[1]-y)<r)
+      && ![...MODEL.systems,...MODEL.huts,...HIDDEN].some(s=>Math.abs(s.tx-x)<5&&Math.abs(s.ty-y)<5);
+
+    /* houses first: they are bigger, so they get first pick of the open ground */
+    const set=[0,1,2].filter(v=>SPR['fill'+lv+v]);
+    if(set.length) for(let i=0;i<HOUSE_COUNT[lv-1]*4&&taken.length<HOUSE_COUNT[lv-1];i++){
+      const x=1+Math.floor(rnd(i*11.3+lv*5.1)*(MW-2)), y=2+Math.floor(rnd(i*19.7+lv*3.3)*(MH-3));
+      if(map[y][x]===1||map[y][x]===4) continue;
+      if(map[y][x-1]===4||map[y][x+1]===4) continue;
+      if(!clearOf(x,y,4)) continue;
+      taken.push([x,y]);
+      PROPS.push({x:x*TS,y:y*TS,k:'fill'+lv+set[Math.floor(rnd(i*7.7+lv)*set.length)]});
+    }
+
+    for(let i=0;i<PROP_COUNT[lv-1];i++){
       const x=Math.floor(rnd(i*17.7)*MW), y=Math.floor(rnd(i*29.3+5)*MH);
       if(map[y][x]===1||map[y][x]===4)continue;
-      const near=[...MODEL.systems,...MODEL.huts].some(s=>Math.abs(s.tx-x)<5&&Math.abs(s.ty-y)<5);
-      if(near)continue;
+      if(!clearOf(x,y,2))continue;
+      taken.push([x,y]);
       PROPS.push({x:x*TS,y:y*TS,k:vocab[Math.floor(rnd(i*3.3+lv*2.7)*vocab.length)]});
     }
   }
@@ -967,6 +1078,12 @@ export function mountCity(el, opts = {}) {
     "..........",".gGgGgGg..",".GgGgGgG..",".gGgGgGg..","..........."]
   };
   Object.keys(PROPART).forEach(k=>{ SPR[k]=P(PROPART[k]) });
+  /* bake the scenery buildings into SPR so rollProps can place them like props */
+  TOWNSFOLK.forEach((set,li)=>set.forEach((r,vi)=>{
+    let rows=mkBuilding(r);
+    if(li===0) rows=ruinRows(rows,vi*13.7);
+    SPR['fill'+(li+1)+vi]=bake(rows);
+  }));
   rollProps(2);   // seed the world at the model's starting level
 
   /* ---------- the five town halls ---------- */
@@ -1198,7 +1315,7 @@ export function mountCity(el, opts = {}) {
     systems:[],huts:[],selected:null,armed:null,busy:{},connected:false,
     energy:MODEL.city.energy,knowledge:MODEL.city.knowledge,health:0,
     tp:MODEL.repo.tests.pass,tt:MODEL.repo.tests.total,
-    cam:{x:25*TS,y:18*TS,z:2,xt:25*TS,yt:18*TS,zt:2},worldLevel:2,
+    cam:{x:17*TS,y:13*TS,z:2,xt:17*TS,yt:13*TS,zt:2},worldLevel:2,
     cats:[],ambient:[],fx:[],scaffolds:[],revealed:false,tick:0
   };
 
@@ -1276,7 +1393,7 @@ export function mountCity(el, opts = {}) {
     const y0=Math.max(0,Math.floor(-oy/z/TS)), y1=Math.min(MH,Math.ceil((S.vh-oy)/z/TS));
     const TT=themeTiles(S.worldLevel);
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-      const k=map[y][x], v=(x*3+y*7)%4;
+      const k=map[y][x], v=vmap[y][x];
       ctx.drawImage(TT[k][v], ox+x*TS*z, oy+y*TS*z, TS*z, TS*z);
     }
 
@@ -1974,7 +2091,7 @@ export function mountCity(el, opts = {}) {
   },{passive:false});
   $('zin').onclick=()=>zoomTo(S.cam.zt+1);
   $('zout').onclick=()=>zoomTo(S.cam.zt-1);
-  $('zfit').onclick=()=>{S.cam.zt=1;S.cam.xt=25*TS;S.cam.yt=18*TS;clampCam()};
+  $('zfit').onclick=()=>{S.cam.zt=1;S.cam.xt=17*TS;S.cam.yt=13*TS;clampCam()};
   WIN('keydown',e=>{
     if(e.key==='Escape'){deselect();S.armed=null;document.querySelectorAll('.hut').forEach(x=>x.classList.remove('armed'));stage.classList.remove('aim')}
     if(e.key==='f')$('zfit').click();

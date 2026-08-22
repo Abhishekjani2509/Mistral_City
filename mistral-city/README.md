@@ -64,7 +64,7 @@ its `requestAnimationFrame` loop. Nothing outside it should touch either.
   `tower | gate | workshop | vault | district | house | watch | library | port`.
   **An unknown kind falls back to a generic house instead of throwing.**
 - `status` is `healthy | warning | broken | unknown`.
-- `tx` / `ty` are tile coordinates on a 52 x 36 grid. **Omit them and systems auto-place on a grid.**
+- `tx` / `ty` are tile coordinates on a 36 x 30 grid. **Omit them and systems auto-place on a grid.**
 - Everything except `id` is optional.
 
 ## The security level drives the whole map
@@ -73,24 +73,47 @@ its `requestAnimationFrame` loop. Nothing outside it should touch either.
 re-skins the entire board, because a repo getting safer should look like the
 town getting better, not like the Town Hall twitching.
 
-One call changes, across the full 52 x 36 map:
+One call changes, across the full 36 x 30 board:
 
 | | Level 1 Overgrown | Level 5 Fortified |
 |---|---|---|
-| Ground | dark reclaimed grass | warm grass and concrete slabs |
-| Paths | dirt, weeds growing through | paved, with painted orange markings |
+| Ground | overgrown grass, moss, bramble | concrete slabs, planted squares only |
+| Paths | dirt, weeds growing through | paved, darker than the plaza, orange markings |
 | Props | dead trees, brambles, boulders | steel lamps, bollards, topiary, containers |
+| Scenery buildings | roofless stone ruins | glass and slate tower blocks |
 | Light | green gloom | warm waterfront daylight |
 | Birds | 1 | 6 |
 | Town Hall | mossy ruin | Mistral tower |
 
-Levels 2, 3 and 4 sit between the two. The tile atlas for a level is baked once
-and cached, so a swap costs about 0.1 to 0.5 ms and does not drop a frame. Draw
-calls per frame are unchanged between levels, 2023 at level 3 against 2027 at
-level 5 on a 1280 x 720 viewport, so the level is free at render time.
+Levels 2, 3 and 4 sit between the two: timber settlement, stone and plaster
+town, concrete and steel.
+
+Ground is themed everywhere, not only under the roads. Paving only the roads
+left level 5 as a motorway through a meadow, so the mix walks from all-wild at
+level 1 to nearly all-slab at level 5, with greenery surviving as planted
+squares inside the pavement. Tile style is picked from a coarse hash so paving
+and planting form patches rather than single-tile confetti.
+
+The tile atlas for a level is baked once and cached, so a swap costs about 0.1
+to 0.7 ms and does not drop a frame. Draw calls per frame are the same at every
+level, so the level is free at render time.
+
+### Scenery buildings
+
+Each level also scatters 13 to 17 filler buildings sized well below any real
+system. They obey art rule 2 without exception: **no ear roofs and no orange**,
+because that pairing is what tells a viewer a building is a system they can
+click. Note that `mkBuilding` defaults both `flat` and `gable` roofs to the
+orange ramp, so any new scenery recipe has to name its own grey, brown or blue
+`bands`.
 
 `setSecurity` works before a repository is connected, which makes it useful for
 trying looks on an empty map.
+
+The board is 36 x 30 tiles. It was 52 x 36, which left roughly half the map as
+empty grass, so it was cropped in around the content and the pond moved into the
+free pocket at the bottom left. That also cut draw calls per frame at fit view
+from about 2,027 to about 1,222.
 
 ## Zoom
 

@@ -43,19 +43,28 @@ Shapes are in `README.md`, working payloads in `examples/`.
 
 ## Changed since the first handoff
 
-1. **The security level now redresses the whole map.** Ground, paths, props, light and bird
-   count all move with it, not just the Town Hall plot. The per-level art already existed in
-   `districtGround` and `sceneLayout` but was only reachable from the dead `fullView()`.
-   See the table in `README.md`.
-2. **Zoom is stepped, eased and pointer-anchored.** One wheel gesture is one step.
-3. **`cat-runtime-adapter.js`** bridges `contracts/cat-events.ts` to `onEvent`. The two
+1. **The security level now redresses the whole map.** Ground, paths, props, scenery
+   buildings, light and bird count all move with it, not just the Town Hall plot. The
+   per-level art already existed in `districtGround` and `sceneLayout` but was only reachable
+   from the dead `fullView()`. See the table in `README.md`.
+2. **The board shrank from 52 x 36 to 36 x 30.** About half of it was empty grass. Content
+   moved by (-8, -4) and the pond moved into the free pocket at the bottom left. Draw calls
+   at fit view went from ~2,027 to ~1,222.
+3. **Ground is themed everywhere, not only the roads,** and tile style is picked from a coarse
+   hash. The old `(x*3+y*7)%4` variant pick is a diagonal lattice: invisible while all four
+   variants were grass, an obvious checkerboard the moment one of them became a paving slab.
+4. **13 to 17 scenery buildings per level.** They must never use an ear roof or the orange
+   ramp, or they stop reading as scenery. `mkBuilding` defaults `flat` and `gable` roofs to
+   the orange ramp, so every scenery recipe names its own grey, brown or blue `bands`.
+5. **Zoom is stepped, eased and pointer-anchored.** One wheel gesture is one step.
+6. **`cat-runtime-adapter.js`** bridges `contracts/cat-events.ts` to `onEvent`. The two
    contracts did not line up, so nothing rendered when they were wired together.
-4. **Typography.** The letterspaced uppercase labels, grey label text and hairlines that
+7. **Typography.** The letterspaced uppercase labels, grey label text and hairlines that
    floated inside padded cards are gone. Tick and cross are pixel SVG drawn from row strings
    like every other sprite here, so still no image files.
-5. **`topiary` now exists.** `RING` level 5 referenced it twice and it had no sprite, so the
+8. **`topiary` now exists.** `RING` level 5 referenced it twice and it had no sprite, so the
    `if(!sp)return` guard silently dropped two waterfront props on every frame.
-6. New API: `checks()`, `levels()`, `securityLevel()`, and `state()` gained `zoom` and `level`.
+9. New API: `checks()`, `levels()`, `securityLevel()`, and `state()` gained `zoom` and `level`.
 
 ## Next tasks, in priority order
 
