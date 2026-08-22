@@ -5,11 +5,19 @@ export type CityRenderer = {
   onEvent(event: RendererEvent): void;
   replay(events: RendererEvent[], speed?: number): number;
   setSecurity(passedIds: string[]): number | undefined;
+  /** Continuous 0..100 security score. Preferred over setSecurity: five
+      booleans can only ever produce five states, and the renderer blends
+      between eras on the fractional part. */
+  setSecurityScore(score: number): number;
+  checks(): { id: string; name: string }[];
+  levels(): { n: number; name: string; era: string; tone: string; blurb: string }[];
+  securityScore(): number;
+  securityLevel(): number;
   select(id: string): void;
   deselect(): void;
-  camera(options: { x?: number; y?: number; z?: number }): void;
+  camera(options: { x?: number; y?: number; z?: number; snap?: boolean }): void;
   on(name: "select", callback: (id: string) => void): void;
-  state(): { health: number; energy: number; systems: number };
+  state(): { health: number; energy: number; systems: number; zoom: number; score: number; level: number };
   destroy(): void;
 };
 
