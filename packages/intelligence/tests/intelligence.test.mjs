@@ -5,6 +5,7 @@ import {
   EventCollector,
   MemoryCache,
   MistralClient,
+  analysisIssueSources,
   calibrateAuthenticationAcceptance,
   enforceConsistency,
   gradeSystem,
@@ -296,7 +297,11 @@ test("OWASP WSTG 50 harness exercises the mock codebase end to end", async () =>
   assert.ok(security.findings.every((finding) => snapshot.files.some((file) => file.path === finding.file && file.content.split(/\r?\n/)[finding.line - 1]?.includes(finding.evidence))));
 
   let audit;
-  const city = await scanRepository(snapshot, { client: new VulnerableRepoClient(), cache: new MemoryCache(), mode: "mock", onAudit: (value) => { audit = value; } });
+  let analysis;
+  const city = await scanRepository(snapshot, {
+    client: new VulnerableRepoClient(), cache: new MemoryCache(), mode: "mock",
+    onAudit: (value) => { audit = value; }, onAnalysis: (value) => { analysis = value; },
+  });
   assert.equal(city.schema, "mistral.city-model/v1");
   assert.equal(city.systems.length, 5);
   assert.equal(city.systems.find((system) => system.id === "auth").status, "broken");
@@ -309,6 +314,11 @@ test("OWASP WSTG 50 harness exercises the mock codebase end to end", async () =>
   assert.equal(audit.mode, "mock");
   assert.equal(audit.outcome, "complete");
   assert.equal(audit.modelCalls.length, 14);
+  const sources = analysisIssueSources(analysis);
+  const publicIssues = city.systems.flatMap((system) => system.issues.map((issue) => ({ systemId: system.id, issue })));
+  assert.equal(sources.length, publicIssues.length);
+  assert.ok(publicIssues.every(({ systemId, issue }) => sources.some((source) => source.systemId === systemId && source.issueId === issue.id && issue.files.includes(source.file))));
+  assert.ok(sources.every((source) => snapshot.files.some((file) => file.path === source.file && file.content.split(/\r?\n/)[source.line - 1])));
 });
 
 for (const [fixture, expectedHealth, expectedStatus] of [

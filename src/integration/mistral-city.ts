@@ -1,5 +1,6 @@
 import type { CatDispatchRequest, CatEvent, CityIssue } from "../../contracts/cat-events";
 import type { CityModel, CitySystem, HealthStatus, SystemKind } from "../../contracts/city-model";
+import type { IssueSourceLink } from "../../contracts/issue-sources";
 import type { RepositoryEvent } from "../api/repository";
 
 // The designer renderer intentionally owns its visual schema. This adapter is the
@@ -20,6 +21,7 @@ export type RendererIssue = CityIssue & {
   t: string;
   d: string;
   w?: boolean;
+  source?: IssueSourceLink;
 };
 
 export type RendererSystem = {
@@ -81,12 +83,13 @@ const kindMap: Record<SystemKind, RendererKind> = {
   unknown: "house",
 };
 
-function issueForRenderer(issue: CityIssue): RendererIssue {
+function issueForRenderer(issue: CityIssue, source?: IssueSourceLink): RendererIssue {
   return {
     ...issue,
     t: issue.summary,
     d: issue.description,
     w: issue.type !== "failing_test",
+    ...(source ? { source } : {}),
   };
 }
 
@@ -120,8 +123,12 @@ function testsFor(city: CityModel): { pass: number; total: number } {
   return { pass, total };
 }
 
-export function toRendererModel(city: CityModel): RendererModel {
+export function toRendererModel(
+  city: CityModel,
+  issueSources: readonly IssueSourceLink[] = [],
+): RendererModel {
   const knownIds = new Set(city.systems.map((system) => system.id));
+  const sourcesByIssue = new Map(issueSources.map((source) => [`${source.systemId}\0${source.issueId}`, source]));
   const existingTower = city.systems.find((system) => system.id === "tower");
   const systems: RendererSystem[] = city.systems.map((system) => ({
     id: system.id,
@@ -135,7 +142,7 @@ export function toRendererModel(city: CityModel): RendererModel {
       .filter((connection) => connection.from === system.id || connection.to === system.id)
       .map((connection) => (connection.from === system.id ? connection.to : connection.from))
       .filter((id, index, ids) => knownIds.has(id) && ids.indexOf(id) === index),
-    issues: system.issues.map(issueForRenderer),
+    issues: system.issues.map((issue) => issueForRenderer(issue, sourcesByIssue.get(`${system.id}\0${issue.id}`))),
   }));
 
   if (!existingTower) {
@@ -235,6 +242,7 @@ export function applyRepositoryEvent(model: CityModel, event: RepositoryEvent): 
     case "repository.cloned":
     case "analysis.started":
     case "analysis.session":
+    case "analysis.sources":
     case "repository.failed":
       return model;
   }

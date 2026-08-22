@@ -1,4 +1,5 @@
 import type { CityModel, HealthStatus, SystemKind } from "../../contracts/city-model";
+import type { IssueSourceLink } from "../../contracts/issue-sources";
 
 const apiOrigin = import.meta.env.VITE_AGENT_API_URL
   ?? (import.meta.env.DEV ? "http://localhost:3001" : window.location.origin);
@@ -8,6 +9,7 @@ export type RepositoryEvent =
   | { type: "repository.cloned"; data: { name: string } }
   | { type: "analysis.started"; data: { repoName: string; estimatedSystems: number } }
   | { type: "analysis.session"; data: { id: string } }
+  | { type: "analysis.sources"; data: { sources: IssueSourceLink[] } }
   | { type: "system.discovered"; data: { id: string; name: string; kind: SystemKind; description: string; confidence: number } }
   | { type: "system.connected"; data: { from: string; to: string } }
   | { type: "system.graded"; data: { id: string; health: number; status: HealthStatus } }

@@ -21,6 +21,21 @@ export function normalizeCityModel(snapshot: RepoSnapshot, analysis: AnalysisMod
   });
 }
 
+/** Private bridge metadata used to connect normalized issues back to verified evidence. */
+export function analysisIssueSources(analysis: AnalysisModel): Array<{
+  issueId: string;
+  systemId: string;
+  file: string;
+  line: number;
+}> {
+  return analysis.systems.flatMap((system) => system.issues.map((finding) => ({
+    issueId: issueIdForFinding(system, finding),
+    systemId: system.id,
+    file: finding.file,
+    line: finding.line,
+  })));
+}
+
 /** Runtime guard for the shared SWE 2 → SWE 1 JSON contract. */
 export function validateCityModel(model: CityModel): CityModel {
   assertExactKeys(model, ["schema", "repository", "city", "systems", "connections"], "CityModel");
@@ -92,17 +107,33 @@ function normalizeSystem(system: SystemModel, snapshot: RepoSnapshot): CitySyste
 }
 
 function normalizeIssue(system: SystemModel, finding: Finding, snapshot: RepoSnapshot): CityIssue {
-  const type = /(?:fail|test)/i.test(finding.type) ? "failing_test" : /build/i.test(finding.type) ? "build_error" : /runtime|error/i.test(finding.type) ? "runtime_error" : "unknown";
+  const type = issueType(finding);
   const failing = snapshot.hardSignals?.[system.id]?.failingTests?.find((test) => test.file === finding.file && test.line === finding.line);
   const securityProbe = finding.type === "security_probe";
   return {
-    id: securityProbe ? finding.id : stableIssueId(system.id, type, finding.file, finding.line),
+    id: issueIdForFinding(system, finding),
     type,
     summary: securityProbe ? sentence(finding.technicalDescription.replace(/^WSTG-[A-Z]+-\d+:\s*/i, "")) : sentence(finding.plainDescription),
     description: finding.plainDescription,
     files: [...new Set([finding.file, ...(failing?.file ? [failing.file] : [])])],
     ...(failing ? { reproduction: `Run the focused test: ${failing.name}.` } : {}),
   };
+}
+
+function issueIdForFinding(system: SystemModel, finding: Finding): string {
+  return finding.type === "security_probe"
+    ? finding.id
+    : stableIssueId(system.id, issueType(finding), finding.file, finding.line);
+}
+
+function issueType(finding: Finding): CityIssue["type"] {
+  return /(?:fail|test)/i.test(finding.type)
+    ? "failing_test"
+    : /build/i.test(finding.type)
+      ? "build_error"
+      : /runtime|error/i.test(finding.type)
+        ? "runtime_error"
+        : "unknown";
 }
 
 function normalizeConnection(from: SystemModel, to: CitySystem): CityConnection {

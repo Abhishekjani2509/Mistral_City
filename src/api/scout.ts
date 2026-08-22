@@ -1,4 +1,5 @@
 import type { CityModel, HealthStatus } from "../../contracts/city-model";
+import type { IssueSourceLink } from "../../contracts/issue-sources";
 
 const apiOrigin = import.meta.env.VITE_AGENT_API_URL
   ?? (import.meta.env.DEV ? "http://localhost:3001" : window.location.origin);
@@ -15,6 +16,7 @@ export type ScoutEvent =
         summary: string;
         detail: string;
         files: string[];
+        sources: IssueSourceLink[];
       };
     }
   | { type: "scout.failed"; data: { systemId: string; message: string } };
