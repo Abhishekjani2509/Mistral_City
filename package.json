@@ -8,7 +8,8 @@
     "test:repair": "ts-node src/agents/repair.test.ts",
     "validate": "ts-node src/agents/repair.test.ts",
     "repair:live": "ts-node src/agents/run-live.ts",
-    "repair:reset": "git checkout -- demo-repo && git clean -fd -- demo-repo"
+    "repair:reset": "git checkout -- demo-repo && git clean -fd -- demo-repo",
+    "repair:golden": "ts-node src/agents/golden-path.ts"
   },
   "keywords": [],
   "author": "",

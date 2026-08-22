@@ -32,3 +32,5 @@ npm-debug.log*
 # Test coverage
 coverage/
 .last-run.ndjson
+.golden/
+.golden-log.txt
