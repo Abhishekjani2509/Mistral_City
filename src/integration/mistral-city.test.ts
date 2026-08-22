@@ -27,6 +27,7 @@ test("attaches source links by both system and issue id", () => {
   }));
 
   const rendered = toRendererModel(model, sources);
+  assert.deepEqual(rendered.repo.tests, { pass: 0, total: 0 });
   assert.equal(rendered.systems.find((system) => system.id === "api")?.issues[0]?.source?.line, 10);
   assert.equal(rendered.systems.find((system) => system.id === "worker")?.issues[0]?.source?.line, 11);
 });

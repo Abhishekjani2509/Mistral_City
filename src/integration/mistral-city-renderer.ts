@@ -8,6 +8,7 @@ export type CityRenderer = {
   select(id: string): void;
   deselect(): void;
   camera(options: { x?: number; y?: number; z?: number }): void;
+  setConnectionState(state: "idle" | "connecting" | "connected", message?: string): void;
   on(name: "select", callback: (id: string) => void): void;
   state(): { health: number; energy: number; systems: number };
   destroy(): void;

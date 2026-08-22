@@ -118,8 +118,9 @@ function testsFor(city: CityModel): { pass: number; total: number } {
   // The current canonical CityModel carries system health, not repository test
   // counts. Keep the renderer demo honest until SWE 2 publishes repo.test data.
   const testSystem = city.systems.find((system) => system.kind === "tests");
+  if (!testSystem || testSystem.status === "unknown") return { pass: 0, total: 0 };
   const total = 19;
-  const pass = testSystem ? Math.max(0, Math.min(total, Math.round((testSystem.health / 100) * total))) : 18;
+  const pass = Math.max(0, Math.min(total, Math.round((testSystem.health / 100) * total)));
   return { pass, total };
 }
 

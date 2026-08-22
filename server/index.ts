@@ -1,6 +1,5 @@
 import cors from "cors";
 import express from "express";
-import { randomUUID } from "node:crypto";
 import path from "node:path";
 import {
   DiskCache,
@@ -13,9 +12,10 @@ import {
   scoutSystem,
   snapshotRepository,
 } from "@mistral-city/intelligence";
-import type { AnalysisModel, RepoSnapshot } from "@mistral-city/intelligence";
+import type { AnalysisModel } from "@mistral-city/intelligence";
 import type { CatDispatchRequest, FailedEvent } from "../contracts/cat-events";
 import type { IssueSourceLink } from "../contracts/issue-sources";
+import { AnalysisSessionStore } from "./analysis-sessions";
 import { dispatchCat } from "./runtime";
 import { buildGitHubIssueSources, cloneGitHubRepository, type RepositoryStreamEvent } from "./repository";
 
@@ -26,24 +26,8 @@ const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 app.use(cors({ origin: clientOrigin }));
 app.use(express.json());
 
-const analysisSessions = new Map<string, {
-  snapshot: RepoSnapshot;
-  analysis: AnalysisModel;
-  source: { webUrl: string; revision: string };
-  expiresAt: number;
-}>();
 const analysisSessionLifetimeMs = 30 * 60 * 1_000;
-
-function saveAnalysisSession(
-  snapshot: RepoSnapshot,
-  analysis: AnalysisModel,
-  source: { webUrl: string; revision: string },
-): string {
-  pruneAnalysisSessions();
-  const id = randomUUID();
-  analysisSessions.set(id, { snapshot, analysis, source, expiresAt: Date.now() + analysisSessionLifetimeMs });
-  return id;
-}
+const analysisSessions = new AnalysisSessionStore(analysisSessionLifetimeMs);
 
 function issueSourceLinks(
   analysis: AnalysisModel,
@@ -53,18 +37,7 @@ function issueSourceLinks(
 }
 
 function getAnalysisSession(id: string) {
-  pruneAnalysisSessions();
-  const session = analysisSessions.get(id);
-  if (!session) throw new Error("This repository session expired. Analyze the repository again before sending Scout Cat.");
-  session.expiresAt = Date.now() + analysisSessionLifetimeMs;
-  return session;
-}
-
-function pruneAnalysisSessions() {
-  const now = Date.now();
-  for (const [id, session] of analysisSessions) {
-    if (session.expiresAt <= now) analysisSessions.delete(id);
-  }
+  return analysisSessions.get(id);
 }
 
 function beginSse(res: express.Response) {
@@ -92,6 +65,7 @@ app.post("/api/analyze-repository", async (req, res) => {
   const send = (event: RepositoryStreamEvent | object) => stream.send(event);
 
   let repository: Awaited<ReturnType<typeof cloneGitHubRepository>> | undefined;
+  let repositoryRetained = false;
   try {
     send({ type: "repository.started", data: { url } });
     repository = await cloneGitHubRepository(url);
@@ -107,7 +81,9 @@ app.post("/api/analyze-repository", async (req, res) => {
     if (analysis) {
       const source = { webUrl: repository.webUrl, revision: repository.revision };
       send({ type: "analysis.sources", data: { sources: issueSourceLinks(analysis, source) } });
-      send({ type: "analysis.session", data: { id: saveAnalysisSession(snapshot, analysis, source) } });
+      const id = analysisSessions.save({ snapshot, analysis, source, cleanup: repository.cleanup });
+      repositoryRetained = true;
+      send({ type: "analysis.session", data: { id } });
     }
     send({ type: "city.model", data: model });
   } catch (error) {
@@ -115,7 +91,7 @@ app.post("/api/analyze-repository", async (req, res) => {
     console.error("Repository analysis failed", message);
     send({ type: "repository.failed", data: { message } });
   } finally {
-    await repository?.cleanup();
+    if (!repositoryRetained) await repository?.cleanup();
     stream.close();
   }
 });

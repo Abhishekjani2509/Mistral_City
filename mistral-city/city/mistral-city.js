@@ -206,6 +206,7 @@ button{font-family:inherit}
 #repo-url{display:block;width:100%;border:2px solid var(--ink);background:var(--paper);color:var(--ink);padding:9px 10px;font:12px "JetBrains Mono",monospace;outline:0}
 #repo-url:focus{border-color:var(--t);box-shadow:0 0 0 2px #E75D2E33}
 #repo-url::placeholder{color:#A8A296}
+.connect-error{min-height:14px;margin-top:7px;color:var(--R);font-size:10px;font-weight:700;line-height:1.35}
 .cbox{width:430px;padding:0}
 .cbox .top{background:var(--ink);color:var(--paper);padding:16px 18px}
 .cbox h1{font-size:24px;margin:0;letter-spacing:-.03em;font-weight:800}
@@ -288,6 +289,7 @@ const CITY_HTML = `
         <div class="bot">
           <label id="repo-label" for="repo-url">GitHub repository URL</label>
           <input id="repo-url" type="url" autocomplete="off" spellcheck="false" placeholder="https://github.com/owner/repository">
+          <div class="connect-error" id="connect-error" role="alert"></div>
           <div class="rm" style="margin:7px 0 10px">Public repositories are cloned and analyzed live.</div>
           <button class="btn hot" id="b-connect" style="width:100%;padding:10px;margin-top:4px">Connect repository</button>
         </div>
@@ -1387,7 +1389,7 @@ export function mountCity(el, opts = {}) {
   const $=id=>document.getElementById(id);
   function setEnergy(v){S.energy=v;$('r-energy').textContent=v}
   function setKnow(v){S.knowledge=v;$('r-know').textContent=v}
-  function setTests(){$('r-tests').textContent=S.tp+'/'+S.tt}
+  function setTests(){$('r-tests').textContent=S.tt?S.tp+'/'+S.tt:'--'}
   function computeHealth(){
     const k=S.systems.filter(s=>s.status!=='unknown');
     const u=S.systems.filter(s=>s.status==='unknown').length;
@@ -2028,6 +2030,7 @@ export function mountCity(el, opts = {}) {
     /* Paul -> Neo -> here. Replaces the whole city. Safe to call more than once. */
     setModel(json){
       if(!json||!json.systems) throw new Error('setModel needs { systems: [...] }');
+      const shouldFit=!S.systems.some(sys=>sys.id!=='tower')&&json.systems.some(sys=>sys.id!=='tower');
       S.systems.forEach(x=>{ if(x.fxTimer) clearInterval(x.fxTimer) });
       S.systems=[]; S.cats=[]; S.scaffolds=[]; S.fx=[]; S.live={}; S.busy={}; deselect();
       MODEL.systems=json.systems.map((sys,i)=>({
@@ -2045,8 +2048,20 @@ export function mountCity(el, opts = {}) {
       if(!S.huts.length) MODEL.huts.forEach(h=>S.huts.push(h));
       if(json.repo&&json.repo.tests){ S.tp=json.repo.tests.pass; S.tt=json.repo.tests.total; setTests(); }
       setHealth(json.city&&json.city.health!=null?json.city.health:computeHealth());
+      if(shouldFit) fitToView();
       S.connected=true; $('connect').classList.add('gone');
       return S.systems.length;
+    },
+
+    setConnectionState(state,message){
+      const idle=state==='idle', connecting=state==='connecting';
+      S.connected=state==='connected';
+      $('connect').classList.toggle('gone',!idle);
+      const button=$('b-connect');
+      button.disabled=connecting;
+      button.textContent=connecting?'Analyzing repository…':'Connect repository';
+      $('connect-error').textContent=message||'';
+      return state;
     },
 
     /* Abhishek streams these. Five types carry the whole interaction. */

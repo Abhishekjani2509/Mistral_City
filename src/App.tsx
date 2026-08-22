@@ -31,6 +31,19 @@ function App() {
   }
 
   function handleRepositoryEvent(event: RepositoryEvent) {
+    if (event.type === "repository.started") {
+      city.current?.onEvent({ type: "agent.log", level: "sys", text: "Cloning the GitHub repository…" });
+    }
+    if (event.type === "repository.cloned") {
+      city.current?.onEvent({ type: "agent.log", level: "code", text: `Cloned ${event.data.name}. Mistral is mapping its systems…` });
+    }
+    if (event.type === "analysis.started") {
+      city.current?.onEvent({
+        type: "agent.log",
+        level: "code",
+        text: `Analyzing approximately ${event.data.estimatedSystems} systems. Results will stream into the city.`,
+      });
+    }
     if (event.type === "analysis.session") {
       analysisSessionId.current = event.data.id;
       return;
@@ -41,6 +54,7 @@ function App() {
     }
     if (event.type === "repository.failed") {
       city.current?.onEvent({ type: "agent.log", level: "bad", text: event.data.message });
+      city.current?.setConnectionState("idle", event.data.message);
       return;
     }
     if (event.type === "analysis.complete" && event.data.warnings.length > 0) {
@@ -51,6 +65,7 @@ function App() {
       });
     }
     publishModel(applyRepositoryEvent(model.current, event));
+    if (event.type === "city.model") city.current?.setConnectionState("connected");
   }
 
   useEffect(() => {
@@ -138,9 +153,11 @@ function App() {
     };
 
     const mounted = mountCity(host.current, {
+      model: rendererModel.current,
       onConnect: (url) => {
         analysisSessionId.current = null;
         issueSources.current = [];
+        city.current?.setConnectionState("connecting");
         publishModel(emptyCityModel("GitHub repository"));
         void analyzeRepository(url, handleRepositoryEvent).catch((error: unknown) => {
           city.current?.onEvent({
@@ -148,11 +165,13 @@ function App() {
             level: "bad",
             text: error instanceof Error ? error.message : "Repository analysis failed.",
           });
+          city.current?.setConnectionState("idle", error instanceof Error ? error.message : "Repository analysis failed.");
         });
         return true;
       },
       onDispatch: handleDispatch,
     });
+    mounted.setConnectionState("idle");
     city.current = mounted;
 
     return () => {
