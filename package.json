@@ -1,0 +1,13 @@
+{
+  "name": "mistral-city",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build -w @mistral-city/intelligence",
+    "city-intel": "npm run build --silent && node packages/intelligence/dist/cli.js",
+    "demo:mock": "npm run demo:mock -w @mistral-city/intelligence",
+    "test": "npm test -w @mistral-city/intelligence",
+    "typecheck": "npm run typecheck -w @mistral-city/intelligence"
+  }
+}
