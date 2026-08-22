@@ -1,0 +1,43 @@
+{
+  "profile": "healthy",
+  "systems": [
+    { "id": "auth", "name": "Authentication", "plainDescription": "Keeps user credentials and sessions secure.", "buildingType": "gate", "files": ["src/auth/password.ts", "src/auth/session.ts"], "connections": ["database"], "discoveryConfidence": 0.97, "quality": {
+      "security": { "tier": "fortified", "rationale": "Validated credentials and secure random sessions.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Session work is bounded.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "No separate deployment surface applies.", "findings": [] },
+      "modularity": { "tier": "well_walled", "rationale": "Password and session responsibilities are separated.", "findings": [] }
+    } },
+    { "id": "api", "name": "Application API", "plainDescription": "Validates and serves application requests.", "buildingType": "port", "files": ["src/api/orders.ts", "src/api/users.ts"], "connections": ["database"], "discoveryConfidence": 0.96, "quality": {
+      "security": { "tier": "fortified", "rationale": "Inputs and authorization are checked.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Request sizes are bounded.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "No separate deployment surface applies.", "findings": [] },
+      "modularity": { "tier": "well_walled", "rationale": "Routes delegate through narrow interfaces.", "findings": [] }
+    } },
+    { "id": "database", "name": "Order Database", "plainDescription": "Stores and retrieves orders safely.", "buildingType": "vault", "files": ["src/db/client.ts", "src/db/orders.ts", "src/db/migrations/001_orders.sql"], "connections": [], "discoveryConfidence": 0.96, "quality": {
+      "security": { "tier": "fortified", "rationale": "Queries are parameterized.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Queries are paginated and indexed.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "Migration includes a rollback.", "findings": [] },
+      "modularity": { "tier": "well_walled", "rationale": "Storage interfaces are narrow.", "findings": [] }
+    } },
+    { "id": "frontend", "name": "Frontend Storefront", "plainDescription": "Lets customers place orders.", "buildingType": "district", "files": ["src/frontend/App.tsx", "src/frontend/Checkout.tsx"], "connections": ["auth", "api"], "discoveryConfidence": 0.94, "quality": {
+      "security": { "tier": "fortified", "rationale": "No relevant security surface applies.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Rendering work is bounded.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "No separate deployment surface applies.", "findings": [] },
+      "modularity": { "tier": "well_walled", "rationale": "Components have focused roles.", "findings": [] }
+    } },
+    { "id": "operations", "name": "Operations", "plainDescription": "Configures and monitors the service.", "buildingType": "depot", "files": ["src/operations/config.ts", "src/operations/health.ts", "package.json"], "connections": ["database"], "discoveryConfidence": 0.95, "quality": {
+      "security": { "tier": "fortified", "rationale": "Secrets stay outside source.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Health checks are bounded.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "Configuration and health checks are production-ready.", "findings": [] },
+      "modularity": { "tier": "well_walled", "rationale": "Operational concerns are isolated.", "findings": [] }
+    } },
+    { "id": "tests", "name": "Automated Tests", "plainDescription": "Checks critical login and ordering behavior.", "buildingType": "guard_tower", "files": ["tests/auth.test.ts", "tests/orders.test.ts"], "connections": ["auth", "api"], "discoveryConfidence": 0.95, "quality": {
+      "security": { "tier": "fortified", "rationale": "No relevant security surface applies.", "findings": [] },
+      "scalability": { "tier": "load_bearing", "rationale": "Test work is bounded.", "findings": [] },
+      "deployment": { "tier": "forged", "rationale": "Tests run deterministically.", "findings": [] },
+      "modularity": { "tier": "well_walled", "rationale": "Tests assert meaningful behavior.", "findings": [] }
+    } }
+  ],
+  "hardSignals": { "auth": { "coverage": 0.96 }, "api": { "coverage": 0.94 }, "database": { "coverage": 0.91 }, "frontend": { "coverage": 0.9 }, "operations": { "coverage": 0.9 }, "tests": { "coverage": 1 } },
+  "expected": { "minimumHealth": 95, "maximumHealth": 100, "status": "healthy" }
+}

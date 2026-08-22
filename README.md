@@ -38,9 +38,17 @@ npm run demo:mock
 
 The first command reports all 50 OWASP WSTG-derived source indicators with exact evidence and makes zero model calls. The second runs the entire semantic discovery → grading → normalization pipeline with a deterministic fake client and prints only the resulting `mistral.city-model/v1` JSON. It exercises orchestration but does not contact Mistral; stderr labels it `MOCK ANALYSIS` and reports the simulated call count. Verified probe findings feed the security grade and the health calculation; the CityModel retains the six highest-risk issues per system while the security report retains all 50 results. These are local static evidence probes, not a live penetration test or proof that an exploit succeeded.
 
-Health keeps the PRD's 60% hard-signal / 40% quality blend, with one additional evidence penalty for verified security findings: critical findings subtract 20, major findings 7, and minor findings 2 from the hard-signal side, capped at 60 points. This prevents a system with concrete exploitable weaknesses from appearing healthy merely because its tests pass and its other quality dimensions are strong. Status still becomes `broken` for any critical finding.
+Health uses a calibrated 40% hard-signal / 60% quality blend, then applies confidence-weighted penalties for every verified finding. Repeated findings have diminishing impact, while confirmed security, runtime, and build failures impose score ceilings. `broken` is reserved for confirmed failures, high-confidence exploitable security findings, multiple critical findings, or health below 45; a single non-operational critical concern is a warning. City health also reflects how much of the file-weighted city is warning or broken, so healthy peripheral systems cannot hide widespread damage.
 
-`CITY_INTEL_DEMO_MODE=1` makes API failures fall back quietly to the committed demo snapshot. Outside demo mode the fallback is logged to stderr. Model IDs may be overridden with `MISTRAL_DISCOVERY_MODEL`, `MISTRAL_CODE_MODEL`, and `MISTRAL_SMALL_MODEL`, but defaults are dated and never use a `-latest` alias.
+`CITY_INTEL_DEMO_MODE=1` makes API failures fall back quietly to the committed demo snapshot. Outside demo mode the fallback is logged to stderr. Defaults are Mistral Large 3 (`mistral-large-2512`) for discovery, Mistral Medium 3.5 (`mistral-medium-3-5`) for code grading, and Mistral Small 4 (`mistral-small-2603`) for lightweight passes. Model IDs may be overridden with `MISTRAL_DISCOVERY_MODEL`, `MISTRAL_CODE_MODEL`, and `MISTRAL_SMALL_MODEL`, but `-latest` aliases are rejected.
+
+Run the repeatable health calibration suite:
+
+```bash
+npm run benchmark:health
+```
+
+It evaluates three six-system commerce repositories with known ground truth: healthy, average, and critical. Expected city bands are 95–100 healthy, 60–79 warning, and 0–40 broken. Deterministic mode isolates scoring regressions from model variance. After configuring a fresh API key, run `set -a && source .env && set +a && npm run benchmark:health:live` to send the same repositories through Mistral and measure model classification, calls, and latency.
 
 ## Quality tier contract
 

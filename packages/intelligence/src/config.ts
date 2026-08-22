@@ -15,10 +15,10 @@ export function loadConfig(overrides: Partial<IntelligenceConfig> = {}): Intelli
     apiKey: process.env.MISTRAL_API_KEY,
     apiBase: process.env.MISTRAL_API_BASE ?? "https://api.mistral.ai/v1",
     discoveryModel: process.env.MISTRAL_DISCOVERY_MODEL ?? "mistral-large-2512",
-    codeModel: process.env.MISTRAL_CODE_MODEL ?? "devstral-2512",
-    smallModel: process.env.MISTRAL_SMALL_MODEL ?? "mistral-small-2506",
+    codeModel: process.env.MISTRAL_CODE_MODEL ?? "mistral-medium-3-5",
+    smallModel: process.env.MISTRAL_SMALL_MODEL ?? "mistral-small-2603",
     // Code-quality prompts carry more repository context than the deployment pass.
-    // Twelve seconds was shorter than a healthy Devstral response on the demo fixture.
+    // Twelve seconds was shorter than healthy code-model responses in calibration.
     requestTimeoutMs: Number(process.env.CITY_INTEL_TIMEOUT_MS ?? 30_000),
     retries: 3,
     cacheDir: process.env.CITY_INTEL_CACHE_DIR ?? ".city-intel-cache",

@@ -12,6 +12,7 @@ import {
   normalizeSystems,
   OWASP_WSTG_50,
   runSecurityProbeSuite,
+  runHealthBenchmark,
   scanRepository,
   scoutSystem,
   systemHealth,
@@ -29,7 +30,7 @@ const bestQuality = {
 
 test("live model configuration pins IDs and gives code analysis enough time", () => {
   const config = loadConfig({
-    discoveryModel: "mistral-large-2512", codeModel: "devstral-2512", smallModel: "mistral-small-2506",
+    discoveryModel: "mistral-large-2512", codeModel: "mistral-medium-3-5", smallModel: "mistral-small-2603",
   });
   assert.equal(config.requestTimeoutMs, 30_000);
   assert.throws(() => loadConfig({ smallModel: "mistral-small-latest" }), /explicitly pinned/);
@@ -53,7 +54,7 @@ test("a timed-out Mistral attempt is retried with a fresh timeout", async () => 
   const parser = { parse: (value) => value };
   const client = new MistralClient("test-key", "https://example.invalid/v1", 2, 5, fetchImpl);
   const result = await client.complete({
-    model: "mistral-small-2506", promptVersion: "test-v1", system: "test", user: "test",
+    model: "mistral-small-2603", promptVersion: "test-v1", system: "test", user: "test",
     schemaName: "test_schema", jsonSchema: { type: "object" }, parser, maxTokens: 10,
   });
   assert.equal(attempts, 2);
@@ -61,7 +62,7 @@ test("a timed-out Mistral attempt is retried with a fresh timeout", async () => 
   assert.deepEqual(result.value, { ok: true });
 });
 
-test("Authentication hero delta lands at 65 and rises above 90", () => {
+test("Authentication hero delta lands in the 60–70 band and rises above 90", () => {
   const beforeQuality = {
     ...bestQuality,
     security: { ...bestQuality.security, tier: "breachable" },
@@ -69,7 +70,7 @@ test("Authentication hero delta lands at 65 and rises above 90", () => {
   };
   const before = systemHealth(beforeQuality, { failingTests: [{ name: "session should persist after refresh" }] });
   const after = systemHealth(bestQuality, {});
-  assert.equal(before, 65);
+  assert.equal(before, 69);
   assert.equal(after, 100);
   assert.equal(calibrateAuthenticationAcceptance(before, after).passes, true);
 });
@@ -155,11 +156,11 @@ test("verified failing tests become critical plain-English issues", async () => 
     files: ["src/auth.ts"], connections: [], discoveryConfidence: 0.9,
   };
   const graded = await gradeSystem(system, {
-    client, cache: new MemoryCache(), codeModel: "devstral-2512", smallModel: "mistral-small-2506",
+    client, cache: new MemoryCache(), codeModel: "mistral-medium-3-5", smallModel: "mistral-small-2603",
     repoFiles: [{ path: "src/auth.ts", content: "export const session = true;\ntest('session persists', verifySession);\n" }],
     hardSignals: { failingTests: [{ name: "session persists", file: "src/auth.ts", line: 2, evidence: "test('session persists', verifySession);" }] },
   });
-  assert.equal(graded.health, 69);
+  assert.equal(graded.health, 71);
   assert.equal(graded.status, "broken");
   assert.equal(graded.issues[0].severity, "critical");
   assert.equal(graded.issues[0].plainDescription, "People lose their session after a refresh.");
@@ -173,12 +174,12 @@ test("Scout performs separate deep discovery and lifts fog", async () => {
     id: "search", name: "Search", plainDescription: "Helps people find information.", buildingType: "library",
     files: ["src/search.ts"], connections: [], discoveryConfidence: 0.4,
     health: 86, status: "unknown", issues: [], quality: bestQuality, deeplyAnalyzed: false,
-    modelRun: { model: "devstral-2512", promptVersion: "grade-code-v1", tokens: 0, cached: true },
+    modelRun: { model: "mistral-medium-3-5", promptVersion: "grade-code-v1", tokens: 0, cached: true },
   };
   const revealed = await scoutSystem("search", { city: { health: 0, schemaVersion: "1.0.0" }, systems: [unknown], warnings: [] }, {
     root: "/fixture", repoName: "fixture", files: [{ path: "src/search.ts", content: "export const find = () => [];\n" }],
   }, {
-    client, cache, discoveryModel: "mistral-large-2512", codeModel: "devstral-2512", smallModel: "mistral-small-2506", emit: collector.sink,
+    client, cache, discoveryModel: "mistral-large-2512", codeModel: "mistral-medium-3-5", smallModel: "mistral-small-2603", emit: collector.sink,
   });
   assert.equal(revealed.status, "healthy");
   assert.ok(revealed.discoveryConfidence >= 0.75);
@@ -223,8 +224,8 @@ test("OWASP WSTG 50 harness exercises the mock codebase end to end", async () =>
   assert.equal(city.schema, "mistral.city-model/v1");
   assert.equal(city.systems.length, 5);
   assert.equal(city.systems.find((system) => system.id === "auth").status, "broken");
-  assert.equal(city.systems.find((system) => system.id === "auth").health, 52);
-  assert.equal(city.city.health, 65);
+  assert.equal(city.systems.find((system) => system.id === "auth").health, 32);
+  assert.equal(city.city.health, 49);
   assert.ok(city.systems.find((system) => system.id === "auth").issues.length > 0);
   assert.ok(city.systems.find((system) => system.id === "auth").issues.some((issue) => issue.summary === "Credentials sent over an unencrypted channel"));
   assert.ok(city.connections.some((connection) => connection.id === "auth-database"));
@@ -233,6 +234,22 @@ test("OWASP WSTG 50 harness exercises the mock codebase end to end", async () =>
   assert.equal(audit.outcome, "complete");
   assert.equal(audit.modelCalls.length, 14);
 });
+
+for (const [fixture, expectedHealth, expectedStatus] of [
+  ["healthy-commerce", 99, "healthy"],
+  ["average-commerce", 79, "warning"],
+  ["critical-commerce", 11, "broken"],
+]) {
+  test(`health benchmark classifies ${fixture}`, async () => {
+    const root = new URL(`../fixtures/health-benchmarks/${fixture}`, import.meta.url).pathname;
+    const result = await runHealthBenchmark(root);
+    assert.equal(result.passed, true);
+    assert.equal(result.model.city.health, expectedHealth);
+    assert.equal(result.model.city.status, expectedStatus);
+    assert.equal(result.model.systems.length, 6);
+    assert.ok(result.audit.modelCalls.length >= 13);
+  });
+}
 
 class FixtureClient {
   calls = 0;

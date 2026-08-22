@@ -8,6 +8,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "city-intel": "npm run build --silent && node dist/cli.js",
+    "benchmark:health": "npm run build --silent && node examples/health-benchmarks.mjs",
+    "benchmark:health:live": "npm run build --silent && node examples/health-benchmarks.mjs --live",
     "demo:mock": "npm run build --silent && node examples/mock-scan.mjs",
     "test": "npm run build --silent && node --test tests/*.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"

@@ -6,6 +6,8 @@
   "scripts": {
     "build": "npm run build -w @mistral-city/intelligence",
     "city-intel": "npm run build --silent && node packages/intelligence/dist/cli.js",
+    "benchmark:health": "npm run benchmark:health -w @mistral-city/intelligence",
+    "benchmark:health:live": "npm run benchmark:health:live -w @mistral-city/intelligence",
     "demo:mock": "npm run demo:mock -w @mistral-city/intelligence",
     "test": "npm test -w @mistral-city/intelligence",
     "typecheck": "npm run typecheck -w @mistral-city/intelligence"

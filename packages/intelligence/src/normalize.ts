@@ -15,7 +15,7 @@ export function normalizeCityModel(snapshot: RepoSnapshot, analysis: AnalysisMod
       detectedStack: detectStack(snapshot),
       analyzedAt: snapshot.analyzedAt ?? new Date().toISOString(),
     },
-    city: { health: analysis.city.health, status: cityStatus(systems) },
+    city: { health: analysis.city.health, status: cityStatus(systems, analysis.city.health) },
     systems,
     connections: connections.sort((a, b) => a.id.localeCompare(b.id)),
   });
@@ -138,9 +138,13 @@ function connectionKind(from: SystemKind, to: SystemKind): ConnectionKind {
   return "depends_on";
 }
 
-function cityStatus(systems: CitySystem[]): CitySystem["status"] {
-  if (systems.some((system) => system.status === "broken")) return "broken";
-  if (systems.some((system) => system.status === "warning" || system.status === "unknown")) return "warning";
+function cityStatus(systems: CitySystem[], health: number): CitySystem["status"] {
+  if (systems.length === 0 || systems.every((system) => system.status === "unknown")) return "unknown";
+  const known = systems.filter((system) => system.status !== "unknown");
+  const totalFiles = known.reduce((sum, system) => sum + Math.max(1, system.files.length), 0);
+  const brokenFiles = known.filter((system) => system.status === "broken").reduce((sum, system) => sum + Math.max(1, system.files.length), 0);
+  if (health < 50 || brokenFiles / Math.max(1, totalFiles) >= 0.5) return "broken";
+  if (health < 85 || systems.some((system) => system.status !== "healthy")) return "warning";
   return "healthy";
 }
 

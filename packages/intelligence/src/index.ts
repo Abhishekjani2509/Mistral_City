@@ -1,4 +1,5 @@
 export * from "./cache.js";
+export * from "./benchmark.js";
 export * from "./client.js";
 export * from "./config.js";
 export * from "./consistency.js";
