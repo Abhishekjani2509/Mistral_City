@@ -45,7 +45,6 @@ export interface CitySystem {
   healthSignals: HealthSignal[];
   issues: CityIssue[];
   confidence: number;
-  position: { x: number; y: number };
 }
 
 export interface CityConnection {

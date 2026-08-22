@@ -33,7 +33,6 @@ export const DEMO_CITY: CityModel = {
       healthSignals: [],
       issues: [],
       confidence: 0.96,
-      position: { x: 19, y: 28 },
     },
     {
       id: "auth",
@@ -53,7 +52,6 @@ export const DEMO_CITY: CityModel = {
       ],
       issues: [authIssue],
       confidence: 0.98,
-      position: { x: 50, y: 25 },
     },
     {
       id: "api",
@@ -66,7 +64,6 @@ export const DEMO_CITY: CityModel = {
       healthSignals: [],
       issues: [],
       confidence: 0.89,
-      position: { x: 76, y: 43 },
     },
     {
       id: "database",
@@ -79,7 +76,6 @@ export const DEMO_CITY: CityModel = {
       healthSignals: [],
       issues: [],
       confidence: 0.91,
-      position: { x: 49, y: 66 },
     },
     {
       id: "tests",
@@ -99,7 +95,6 @@ export const DEMO_CITY: CityModel = {
       ],
       issues: [],
       confidence: 0.94,
-      position: { x: 21, y: 70 },
     },
   ],
   connections: [

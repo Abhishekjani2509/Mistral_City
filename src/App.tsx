@@ -5,6 +5,7 @@ import { dispatchCat } from "./api/cat-runtime";
 import { CityWorld } from "./components/CityWorld";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { TopBar } from "./components/TopBar";
+import { DEMO_LAYOUT } from "./data/demo-layout";
 import { systemById } from "./domain/city";
 import { DEMO_CITY } from "./data/demo-city";
 
@@ -70,6 +71,7 @@ function App() {
           </div>
           <CityWorld
             city={city}
+            layout={DEMO_LAYOUT}
             selectedId={selected.id}
             isDispatching={isDispatching}
             onSelectSystem={setSelectedId}

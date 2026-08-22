@@ -1,8 +1,10 @@
 import type { CityModel } from "../../contracts/city-model";
-import { buildingIcon, systemById } from "../domain/city";
+import type { CityLayout } from "../data/demo-layout";
+import { buildingIcon } from "../domain/city";
 
 type CityWorldProps = {
   city: CityModel;
+  layout: CityLayout;
   selectedId: string;
   isDispatching: boolean;
   onSelectSystem: (systemId: string) => void;
@@ -12,14 +14,14 @@ function buildingClass(status: string): string {
   return `building building-${status}`;
 }
 
-export function CityWorld({ city, selectedId, isDispatching, onSelectSystem }: CityWorldProps) {
+export function CityWorld({ city, layout, selectedId, isDispatching, onSelectSystem }: CityWorldProps) {
   return (
     <div className="city-world" aria-label="Mistral City software map">
       <div className="sun-glow" />
       <svg className="roads" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         {city.connections.map((connection) => {
-          const from = systemById(city, connection.from)?.position;
-          const to = systemById(city, connection.to)?.position;
+          const from = layout[connection.from];
+          const to = layout[connection.to];
           if (!from || !to) return null;
           const active = connection.from === selectedId || connection.to === selectedId;
           return (
@@ -44,7 +46,7 @@ export function CityWorld({ city, selectedId, isDispatching, onSelectSystem }: C
         <button
           key={system.id}
           className={`${buildingClass(system.status)} ${system.id === selectedId ? "building-selected" : ""}`}
-          style={{ left: `${system.position.x}%`, top: `${system.position.y}%` }}
+          style={{ left: `${layout[system.id]?.x ?? 50}%`, top: `${layout[system.id]?.y ?? 50}%` }}
           onClick={() => onSelectSystem(system.id)}
         >
           <span className="building-icon">{buildingIcon(system.kind)}</span>
