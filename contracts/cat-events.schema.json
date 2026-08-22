@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mistral.city/schemas/cat-event.v1.json",
+  "title": "Mistral City Cat Event",
+  "type": "object",
+  "required": [
+    "schema",
+    "runId",
+    "sequence",
+    "emittedAt",
+    "agent",
+    "phase",
+    "systemId",
+    "message",
+    "payload"
+  ],
+  "properties": {
+    "schema": { "const": "mistral.city.cat-event/v1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "emittedAt": { "type": "string", "format": "date-time" },
+    "agent": { "enum": ["repair", "scout", "guard"] },
+    "phase": {
+      "enum": [
+        "DISPATCHED",
+        "TRAVELING",
+        "INSPECTING",
+        "ISSUE_FOUND",
+        "EDITING",
+        "TESTING",
+        "SUCCESS",
+        "FAILED"
+      ]
+    },
+    "systemId": { "type": "string", "minLength": 1 },
+    "message": { "type": "string", "minLength": 1 },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "payload": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "phase": { "const": "DISPATCHED" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["issue"],
+            "properties": { "issue": { "$ref": "#/$defs/issue" } },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "TRAVELING" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "string", "minLength": 1 },
+              "to": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "INSPECTING" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["files"],
+            "properties": {
+              "files": { "type": "array", "items": { "type": "string" } },
+              "commands": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "ISSUE_FOUND" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["issue"],
+            "properties": {
+              "issue": { "$ref": "#/$defs/issue" },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "EDITING" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["changedFiles"],
+            "properties": {
+              "changedFiles": { "type": "array", "items": { "type": "string" } },
+              "diffSummary": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "TESTING" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["command", "status"],
+            "properties": {
+              "command": { "type": "string", "minLength": 1 },
+              "status": { "enum": ["running", "passed", "failed"] },
+              "passed": { "type": "integer", "minimum": 0 },
+              "failed": { "type": "integer", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "SUCCESS" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["summary", "changedFiles", "verification"],
+            "properties": {
+              "summary": { "type": "string", "minLength": 1 },
+              "changedFiles": { "type": "array", "items": { "type": "string" } },
+              "verification": {
+                "type": "object",
+                "required": ["commands"],
+                "properties": {
+                  "commands": { "type": "array", "items": { "type": "string" } },
+                  "testsPassed": { "type": "integer", "minimum": 0 },
+                  "testsFailed": { "type": "integer", "minimum": 0 }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "FAILED" } } },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["code", "summary", "retryable"],
+            "properties": {
+              "code": {
+                "enum": [
+                  "ISSUE_NOT_REPRODUCED",
+                  "TESTS_FAILED",
+                  "EDIT_FAILED",
+                  "TIMEOUT",
+                  "AGENT_ERROR"
+                ]
+              },
+              "summary": { "type": "string", "minLength": 1 },
+              "retryable": { "type": "boolean" },
+              "details": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "issue": {
+      "type": "object",
+      "required": ["id", "type", "summary", "description", "files"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": ["failing_test", "runtime_error", "build_error", "unknown"]
+        },
+        "summary": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "reproduction": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
