@@ -73,6 +73,7 @@ app.post("/api/analyze-repository", async (req, res) => {
     const snapshot = { ...(await snapshotRepository(repository.root)), repoName: repository.name };
     let analysis: AnalysisModel | undefined;
     const model = await scanRepository(snapshot, {
+      analysisProfile: "fast",
       mode: "live",
       emit: (event) => send(event),
       log: (message) => console.log(`[city-intel] ${message}`),

@@ -30,8 +30,13 @@ npm run demo:mock
 npm test
 npm run typecheck
 npm run city-intel -- scan /path/to/repo --stream
+npm run city-intel -- scan /path/to/repo --fast --stream
 npm run benchmark:health
 ```
+
+The web app uses the fast profile: one combined evidence-backed grading call
+per system and deterministic plain-English summaries. The default CLI profile
+keeps the separate grading and translation passes for comprehensive audits.
 
 Use `CITY_INTEL_DEMO_MODE=1` to allow live analysis failures to fall back to
 the committed demo snapshot. Model IDs are pinned through the

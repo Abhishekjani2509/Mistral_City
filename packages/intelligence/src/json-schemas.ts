@@ -38,6 +38,16 @@ export const codeGradesJsonSchema = {
 
 export const deploymentGradeJsonSchema = grade(["forged", "sputtering", "cold_forge"]);
 
+export const fastQualityGradesJsonSchema = {
+  type: "object", additionalProperties: false, required: ["security", "scalability", "deployment", "modularity"],
+  properties: {
+    security: grade(["fortified", "breachable", "undefended"]),
+    scalability: grade(["load_bearing", "strained", "buckling"]),
+    deployment: grade(["forged", "sputtering", "cold_forge"]),
+    modularity: grade(["well_walled", "tangled", "labyrinth"]),
+  },
+} as const;
+
 export const plainJsonSchema = {
   type: "object", additionalProperties: false, required: ["issues"],
   properties: { issues: { type: "array", items: { type: "object", additionalProperties: false, required: ["id", "plainDescription"], properties: { id: { type: "string" }, plainDescription: { type: "string" } } } } },
