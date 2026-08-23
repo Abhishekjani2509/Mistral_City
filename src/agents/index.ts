@@ -7,5 +7,7 @@
 
 export { runRepair } from "./repair";
 export type { RepairOptions } from "./repair";
-export { changedFiles, resetRepo, runTests, parseJestSummary } from "./repo";
+export { changedFiles, resetRepo, runTests, parseJestSummary, unifiedDiff, verifyCommandAvailable } from "./repo";
 export type { TestOutcome } from "./repo";
+export { openPullRequest } from "./pr";
+export type { PullRequestInput, PullRequestResult } from "./pr";

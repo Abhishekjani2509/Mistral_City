@@ -8,6 +8,7 @@
  * word, so `changedFiles` in the event stream always reflects reality.
  */
 
+import fs from "fs/promises";
 import path from "path";
 import { run } from "./exec";
 
@@ -84,12 +85,72 @@ export async function changedFiles(repoPath: string): Promise<string[]> {
   return [...new Set(files)].sort();
 }
 
+/**
+ * The actual patch the cat produced, as a unified diff.
+ *
+ * This is what makes a repair inspectable rather than something the user has
+ * to take on trust: the city can show the real before/after instead of only
+ * a list of filenames. Read-only - it never stages or mutates anything.
+ *
+ * Covers tracked edits, which is what a repair to existing code produces. A
+ * brand new file shows up in `changedFiles` but has no diff to render.
+ */
+export async function unifiedDiff(
+  repoPath: string,
+  files: string[],
+  maxChars = 6000
+): Promise<string> {
+  if (files.length === 0) return "";
+
+  const result = await run("git", ["diff", "--", ...files], {
+    cwd: repoPath,
+    timeoutMs: 20_000,
+  });
+  if (result.code !== 0) return "";
+
+  const patch = result.stdout.trim();
+  if (patch.length <= maxChars) return patch;
+  return `${patch.slice(0, maxChars)}\n... diff truncated ...`;
+}
+
 /** Restore `repoPath` to its committed state, discarding agent edits. */
 export async function resetRepo(repoPath: string): Promise<void> {
   const root = await gitRoot(repoPath);
   if (!root) return;
   await run("git", ["checkout", "--", repoPath], { cwd: root, timeoutMs: 30_000 });
   await run("git", ["clean", "-fd", "--", repoPath], { cwd: root, timeoutMs: 30_000 });
+}
+
+/**
+ * Can this repository run the verification command at all?
+ *
+ * Checked before repairing rather than inferred from npm's stderr. npm fails
+ * differently for a missing script and a missing package.json, and matching
+ * that text was already wrong twice: both look like "the command failed",
+ * which the cat would otherwise read as a reproduced bug and try to fix.
+ */
+export async function verifyCommandAvailable(
+  repoPath: string,
+  args: string[]
+): Promise<{ available: boolean; reason?: string }> {
+  const manifestPath = path.join(repoPath, "package.json");
+
+  let manifest: { scripts?: Record<string, string> };
+  try {
+    manifest = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
+  } catch {
+    return { available: false, reason: "it has no package.json" };
+  }
+
+  // `npm test` runs scripts.test; `npm run <name>` runs scripts[name].
+  const script = args[0] === "run" ? args[1] : args[0];
+  if (!script) return { available: false, reason: "no verification command was given" };
+
+  if (!manifest.scripts?.[script]) {
+    return { available: false, reason: `it defines no "${script}" script` };
+  }
+
+  return { available: true };
 }
 
 /**

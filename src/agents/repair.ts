@@ -29,8 +29,9 @@ import {
   SuccessEvent,
   FailedEvent,
 } from "../../contracts/cat-events";
-import { changedFiles, runTests } from "./repo";
+import { changedFiles, runTests, unifiedDiff, verifyCommandAvailable } from "./repo";
 import { runVibeRepair } from "./vibe";
+import { openPullRequest } from "./pr";
 
 export interface RepairOptions {
   /**
@@ -46,6 +47,12 @@ export interface RepairOptions {
   /** Verification attempts before giving up. */
   maxAttempts?: number;
   vibeTimeoutMs?: number;
+  /**
+   * Open a pull request against the repaired repository after verification
+   * passes. Off by default: the reliability harness repairs the demo repo
+   * repeatedly, and it must never open a PR per run.
+   */
+  openPr?: boolean;
 }
 
 const DEFAULT_REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../demo-repo");
@@ -121,6 +128,19 @@ export async function* runRepair(
       commands: [verifyCommand],
     },
   } as InspectingEvent;
+
+  // Nothing to verify against means no repair can ever be proven here, so
+  // stop before editing anyone's code.
+  const verifiable = await verifyCommandAvailable(repoPath, testArgs);
+  if (!verifiable.available) {
+    yield fail(
+      "ISSUE_NOT_REPRODUCED",
+      "Repair Cat found no way to verify a repair here.",
+      `This repository cannot run \`${verifyCommand}\` because ${verifiable.reason}, so a fix cannot be proven.`,
+      false
+    );
+    return;
+  }
 
   // Reproduce before repairing. A green suite here means the city's model of
   // this system is stale, which is a different problem from a failed repair.
@@ -220,11 +240,16 @@ export async function* runRepair(
       continue;
     }
 
+    // Carry the real patch, not just a claim about it, so the city can show
+    // what actually changed. Prose first, then the diff itself.
+    const patch = await unifiedDiff(repoPath, edited);
+    const diffSummary = [vibe.summary, patch].filter(Boolean).join("\n\n");
+
     yield {
       ...base("EDITING", "Updating session persistence.", attempt),
       payload: {
         changedFiles: edited,
-        ...(vibe.summary ? { diffSummary: vibe.summary } : {}),
+        ...(diffSummary ? { diffSummary } : {}),
       },
     } as EditingEvent;
 
@@ -251,6 +276,30 @@ export async function* runRepair(
     } as TestingEvent;
 
     if (verification.ok) {
+      const repairSummary =
+        vibe.summary || "The reported problem is resolved and the suite is green.";
+
+      // Submit only after the command above passed. The PR URL rides in the
+      // summary text because the SUCCESS payload is a closed schema.
+      let submission = "";
+      if (options.openPr) {
+        const pr = await openPullRequest({
+          repoPath,
+          runId,
+          changedFiles: edited,
+          issueSummary: issue.summary,
+          repairSummary,
+          verification: {
+            command: verifyCommand,
+            testsPassed: verification.passed,
+            testsFailed: verification.failed,
+          },
+        });
+        submission = pr.ok
+          ? ` Pull request opened: ${pr.url ?? "see the repository"}.`
+          : ` The repair was not submitted: ${pr.reason}`;
+      }
+
       yield {
         ...base(
           "SUCCESS",
@@ -258,7 +307,7 @@ export async function* runRepair(
           attempt
         ),
         payload: {
-          summary: vibe.summary || "The reported problem is resolved and the suite is green.",
+          summary: `${repairSummary}${submission}`,
           changedFiles: edited,
           verification: {
             commands: [verifyCommand],
