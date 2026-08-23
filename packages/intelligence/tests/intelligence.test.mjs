@@ -177,21 +177,6 @@ test("one rate-limited system stays under fog without discarding successful grad
   assert.ok(collector.events.at(-1).data.warnings.some((warning) => warning.includes("System 2")));
 });
 
-test("fast analysis uses one combined grading call per system and no translation pass", async () => {
-  const client = new FixtureClient();
-  let audit;
-  const model = await scanRepository(fixtureRepo(), {
-    client, cache: new MemoryCache(), analysisProfile: "fast", onAudit: (value) => { audit = value; },
-  });
-  assert.equal(model.systems.length, 5);
-  assert.equal(audit.profile, "fast");
-  assert.equal(audit.modelCalls.length, 6);
-  assert.equal(audit.modelCalls.filter((call) => call.schemaName === "semantic_systems").length, 1);
-  assert.equal(audit.modelCalls.filter((call) => call.schemaName === "quality_grades_fast").length, 5);
-  assert.ok(audit.modelCalls.filter((call) => call.schemaName === "quality_grades_fast").every((call) => call.model === "mistral-medium-3-5"));
-  assert.equal(audit.modelCalls.filter((call) => call.schemaName === "deployment_grade" || call.schemaName === "plain_issues").length, 0);
-});
-
 test("failed semantic discovery produces a local fogged city and completes analysis", async () => {
   const collector = new EventCollector();
   let audit;
@@ -367,12 +352,6 @@ class FixtureClient {
       value: {
         security: grade("fortified", "No security surface."), scalability: grade("load_bearing", "Work is bounded."), modularity: grade("well_walled", "The interface is narrow."),
       }, model: request.model, promptVersion: request.promptVersion, tokens: 10,
-    };
-    if (request.schemaName === "quality_grades_fast") return {
-      value: {
-        security: grade("fortified", "No security surface."), scalability: grade("load_bearing", "Work is bounded."),
-        deployment: grade("forged", "There is no separate deployment surface."), modularity: grade("well_walled", "The interface is narrow."),
-      }, model: request.model, promptVersion: request.promptVersion, tokens: 12,
     };
     if (request.schemaName === "deployment_grade") return {
       value: grade("forged", "There is no separate deployment surface."), model: request.model, promptVersion: request.promptVersion, tokens: 5,

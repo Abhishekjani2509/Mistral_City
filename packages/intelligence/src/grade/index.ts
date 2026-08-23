@@ -3,16 +3,15 @@ import type { CacheStore } from "../cache.js";
 import { cacheKey } from "../cache.js";
 import type { IntelligenceModelClient } from "../client.js";
 import { enforceConsistency } from "../consistency.js";
-import { codeGradesJsonSchema, deploymentGradeJsonSchema, fastQualityGradesJsonSchema, plainJsonSchema } from "../json-schemas.js";
+import { codeGradesJsonSchema, deploymentGradeJsonSchema, plainJsonSchema } from "../json-schemas.js";
 import { ensurePlainEnglish } from "../plain.js";
-import { GRADE_CODE_PROMPT, GRADE_CODE_VERSION, GRADE_DEPLOYMENT_PROMPT, GRADE_DEPLOYMENT_VERSION, GRADE_FAST_PROMPT, GRADE_FAST_VERSION, PLAIN_PROMPT, PLAIN_VERSION } from "../prompts.js";
-import { rawGradeSchema, type Dimension, type DiscoveredSystem, type Finding, type QualityBlock, type RawGrade, type RepoFile, type SystemModel } from "../schema.js";
+import { GRADE_CODE_PROMPT, GRADE_CODE_VERSION, GRADE_DEPLOYMENT_PROMPT, GRADE_DEPLOYMENT_VERSION, PLAIN_PROMPT, PLAIN_VERSION } from "../prompts.js";
+import { rawGradeSchema, type Dimension, type DiscoveredSystem, type Finding, type QualityBlock, type RepoFile, type SystemModel } from "../schema.js";
 import { runSecurityProbeSuite } from "../security/attack-catalog.js";
 import { systemHealth, systemStatus } from "../synthesize.js";
 import { verifyFindings } from "../verify.js";
 
 const codeGradesSchema = z.object({ security: rawGradeSchema, scalability: rawGradeSchema, modularity: rawGradeSchema });
-const fastQualityGradesSchema = z.object({ security: rawGradeSchema, scalability: rawGradeSchema, deployment: rawGradeSchema, modularity: rawGradeSchema });
 const plainResponseSchema = z.object({ issues: z.array(z.object({ id: z.string(), plainDescription: z.string().min(1) })) });
 
 export interface GradeSystemOptions {
@@ -20,39 +19,24 @@ export interface GradeSystemOptions {
   repoFiles: RepoFile[]; hardSignals?: Parameters<typeof systemHealth>[1]; deeplyAnalyzed?: boolean;
   cacheContext?: string;
   timeoutMs?: number;
-  profile?: "fast" | "comprehensive";
   onDroppedFinding?: (message: string) => void;
 }
 
 export async function gradeSystem(system: DiscoveredSystem, options: GradeSystemOptions): Promise<SystemModel> {
   const files = system.files.map((path) => options.repoFiles.find((file) => file.path === path)).filter((file): file is RepoFile => Boolean(file));
-  let rawByDimension: Record<Dimension, RawGrade>;
-  let gradingTokens: number;
-  const gradingModel = options.codeModel;
-  if (options.profile === "fast") {
-    const combined = await cachedCompletion(options.cache, files, contextualVersion(GRADE_FAST_VERSION, options.cacheContext), gradingModel, () => options.client.complete({
-      model: gradingModel, promptVersion: GRADE_FAST_VERSION, system: GRADE_FAST_PROMPT,
-      user: gradeInput(system, files, 35_000), schemaName: "quality_grades_fast", jsonSchema: fastQualityGradesJsonSchema,
-      parser: fastQualityGradesSchema, maxTokens: 3_500, timeoutMs: options.timeoutMs,
-    }));
-    rawByDimension = combined.value;
-    gradingTokens = combined.tokens;
-  } else {
-    const [code, deployment] = await Promise.all([
-      cachedCompletion(options.cache, files, contextualVersion(GRADE_CODE_VERSION, options.cacheContext), options.codeModel, () => options.client.complete({
-        model: options.codeModel, promptVersion: GRADE_CODE_VERSION, system: GRADE_CODE_PROMPT,
-        user: gradeInput(system, files, 90_000), schemaName: "code_quality_grades", jsonSchema: codeGradesJsonSchema,
-        parser: codeGradesSchema, maxTokens: 5_000, timeoutMs: options.timeoutMs,
-      })),
-      cachedCompletion(options.cache, files, contextualVersion(GRADE_DEPLOYMENT_VERSION, options.cacheContext), options.smallModel, () => options.client.complete({
-        model: options.smallModel, promptVersion: GRADE_DEPLOYMENT_VERSION, system: GRADE_DEPLOYMENT_PROMPT,
-        user: gradeInput(system, files, 40_000), schemaName: "deployment_grade", jsonSchema: deploymentGradeJsonSchema,
-        parser: rawGradeSchema, maxTokens: 1_500, timeoutMs: options.timeoutMs,
-      })),
-    ]);
-    rawByDimension = { ...code.value, deployment: deployment.value };
-    gradingTokens = code.tokens + deployment.tokens;
-  }
+  const [code, deployment] = await Promise.all([
+    cachedCompletion(options.cache, files, contextualVersion(GRADE_CODE_VERSION, options.cacheContext), options.codeModel, () => options.client.complete({
+      model: options.codeModel, promptVersion: GRADE_CODE_VERSION, system: GRADE_CODE_PROMPT,
+      user: gradeInput(system, files, 90_000), schemaName: "code_quality_grades", jsonSchema: codeGradesJsonSchema,
+      parser: codeGradesSchema, maxTokens: 5_000, timeoutMs: options.timeoutMs,
+    })),
+    cachedCompletion(options.cache, files, contextualVersion(GRADE_DEPLOYMENT_VERSION, options.cacheContext), options.smallModel, () => options.client.complete({
+      model: options.smallModel, promptVersion: GRADE_DEPLOYMENT_VERSION, system: GRADE_DEPLOYMENT_PROMPT,
+      user: gradeInput(system, files, 40_000), schemaName: "deployment_grade", jsonSchema: deploymentGradeJsonSchema,
+      parser: rawGradeSchema, maxTokens: 1_500, timeoutMs: options.timeoutMs,
+    })),
+  ]);
+  const rawByDimension = { ...code.value, deployment: deployment.value };
   const verifiedByDimension = {} as Record<Dimension, ReturnType<typeof verifyFindings>>;
   for (const dimension of Object.keys(rawByDimension) as Dimension[]) {
     verifiedByDimension[dimension] = verifyFindings(rawByDimension[dimension].findings, dimension, {}, files);
@@ -80,13 +64,7 @@ export async function gradeSystem(system: DiscoveredSystem, options: GradeSystem
       .slice(0, 6);
   }
   const allRawVerified = (Object.keys(verifiedByDimension) as Dimension[]).flatMap((dimension) => verifiedByDimension[dimension].findings);
-  const plain = options.profile === "fast"
-    ? {
-        descriptions: Object.fromEntries(allRawVerified.map((finding) => [finding.id, ensurePlainEnglish(finding.technicalDescription, finding.plainDescription)])),
-        tokens: 0,
-        cached: true,
-      }
-    : await plainDescriptions(system, allRawVerified, files, options);
+  const plain = await plainDescriptions(system, allRawVerified, files, options);
   const quality = {} as QualityBlock;
   const issues: Finding[] = [];
   for (const dimension of Object.keys(rawByDimension) as Dimension[]) {
@@ -109,7 +87,7 @@ export async function gradeSystem(system: DiscoveredSystem, options: GradeSystem
     issues: issues.sort((a, b) => a.id.localeCompare(b.id)), quality, deeplyAnalyzed,
     // All component results have been persisted before the system is emitted. Keeping
     // this artifact-level flag stable makes unchanged scans byte-deterministic.
-    modelRun: { model: gradingModel, promptVersion: options.profile === "fast" ? GRADE_FAST_VERSION : GRADE_CODE_VERSION, tokens: gradingTokens + plain.tokens, cached: true },
+    modelRun: { model: options.codeModel, promptVersion: GRADE_CODE_VERSION, tokens: code.tokens + deployment.tokens + plain.tokens, cached: true },
   };
 }
 

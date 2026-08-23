@@ -16,7 +16,6 @@ import { runSecurityProbeSuite } from "./security/attack-catalog.js";
 import { cityHealth } from "./synthesize.js";
 
 export interface ScanOptions {
-  analysisProfile?: "fast" | "comprehensive";
   client?: IntelligenceModelClient;
   cache?: CacheStore;
   config?: Partial<IntelligenceConfig>;
@@ -34,7 +33,6 @@ export interface ScanOptions {
 
 export interface AnalysisRunAudit {
   mode: "live" | "mock" | "injected";
-  profile: "fast" | "comprehensive";
   outcome: "complete" | "partial" | "fallback" | "failed";
   elapsedMs: number;
   cache: { hits: number; misses: number; writes: number };
@@ -43,11 +41,10 @@ export interface AnalysisRunAudit {
 
 export async function scanRepository(snapshot: RepoSnapshot, options: ScanOptions = {}): Promise<CityModel> {
   const config = loadConfig(options.config);
-  const profile = options.analysisProfile ?? "comprehensive";
   const emit = deduplicatingSink(options.emit ?? noopEventSink);
   const startedAt = Date.now();
   const audit: AnalysisRunAudit = {
-    mode: options.mode ?? (options.client ? "injected" : "live"), profile, outcome: "failed", elapsedMs: 0,
+    mode: options.mode ?? (options.client ? "injected" : "live"), outcome: "failed", elapsedMs: 0,
     cache: { hits: 0, misses: 0, writes: 0 }, modelCalls: [],
   };
   const rawClient = options.client ?? (config.apiKey ? new MistralClient(config.apiKey, config.apiBase, config.retries, config.requestTimeoutMs) : new MissingClient());
@@ -75,7 +72,6 @@ export async function scanRepository(snapshot: RepoSnapshot, options: ScanOption
         graded = await gradeSystem(system, {
           client, cache, codeModel: config.codeModel, smallModel: config.smallModel,
           repoFiles: snapshot.files, hardSignals: snapshot.hardSignals?.[system.id],
-          profile,
           onDroppedFinding: (message) => options.log?.(`Dropped unverifiable finding: ${message}`),
         });
       } catch (error) {

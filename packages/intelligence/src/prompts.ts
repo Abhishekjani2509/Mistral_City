@@ -1,7 +1,6 @@
 export const DISCOVER_VERSION = "discover-v1";
 export const GRADE_CODE_VERSION = "grade-code-v1";
 export const GRADE_DEPLOYMENT_VERSION = "grade-deployment-v1";
-export const GRADE_FAST_VERSION = "grade-fast-v1";
 export const PLAIN_VERSION = "plain-v1";
 export const GUARD_VERSION = "guard-v1";
 export const SCOUT_VERSION = "scout-v1";
@@ -17,12 +16,6 @@ scalability · load_bearing: bounded queries, pagination, no N+1s, work batched 
 modularity · well_walled: single responsibility, dependencies point one direction, narrow interfaces, meaningful tests. tangled: understandable with effort — god objects, leaky abstractions, duplicated logic, brittle tests. labyrinth: change is dangerous — circular dependencies, giant functions, hidden global state, no tests or tests that assert nothing.`;
 
 export const GRADE_DEPLOYMENT_PROMPT = `Grade deployment only. Every finding must cite an exact supplied file, a one-based line that exists, and a verbatim snippet from that line. If this system has no deployment surface, return forged with no findings and explicitly say so.
-
-deployment · forged: config externalized, health checks present, migrations reversible, structured logging, deterministic build. sputtering: ships with friction — partly hardcoded config, manual steps, thin logging, forward-only migrations. cold_forge: cannot be safely deployed — environment values baked into source, no way to observe failure, destructive irreversible migration.`;
-
-export const GRADE_FAST_PROMPT = `${GRADE_CODE_PROMPT}
-
-Also return an independent deployment grade in the same response.
 
 deployment · forged: config externalized, health checks present, migrations reversible, structured logging, deterministic build. sputtering: ships with friction — partly hardcoded config, manual steps, thin logging, forward-only migrations. cold_forge: cannot be safely deployed — environment values baked into source, no way to observe failure, destructive irreversible migration.`;
 
