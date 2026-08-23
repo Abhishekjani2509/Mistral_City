@@ -690,6 +690,36 @@ export function mountCity(el, opts = {}) {
     const fine=rnd(x*4.77+y*9.13+0.5);
     vmap[y][x]=Math.floor((fine>0.74?fine:blob)*4)%4;
   }}
+  /* The board is a fixed 34x29, but the canvas is whatever size the window is.
+     Clamping the tile loop to the board left a hard rectangle of terrain sitting
+     on flat backdrop, which read as a diorama on a table rather than a town in a
+     landscape. The generator above is pure arithmetic on (x,y), so the same three
+     formulas run for any coordinate and the ground reaches every edge of the
+     canvas at any zoom or window size.
+
+     Only nature is generated out there. Roads and the pond are carved into `map`
+     below and stay inside the board, so the outskirts never sprout a road that
+     leads nowhere. Distance from the Town Hall keeps growing past the edge, so
+     the threshold saturates and the far country is the last ground to change
+     era, which is what you want: the wilderness gives way to town slowly.
+
+     Cached because draw() asks for the same tiles every frame. The working set
+     is one viewport, not the whole plane. */
+  const OUTSKIRT=new Map();
+  function outskirt(x,y){
+    const key=x+','+y;
+    let t=OUTSKIRT.get(key);
+    if(t) return t;
+    const n=rnd(x*7.3+y*13.1);
+    const d=Math.hypot(x-HALLX,y-HALLY)/MAXD;
+    const blob=rnd(Math.floor(x/3)*5.13+Math.floor(y/3)*8.71);
+    const fine=rnd(x*4.77+y*9.13+0.5);
+    t={k: n>0.93?3 : n>0.72?2 : 0,
+       t: Math.max(0,Math.min(0.999, d*0.62 + blob*0.38)),
+       v: Math.floor((fine>0.74?fine:blob)*4)%4};
+    OUTSKIRT.set(key,t);
+    return t;
+  }
   function carve(ax,ay,bx,by){
     let x=ax,y=ay;
     while(x!==bx){map[y][x]=1;x+=x<bx?1:-1}
@@ -1407,14 +1437,17 @@ export function mountCity(el, opts = {}) {
     if(_th){ const hl=hallLevel(); if(_th.level!==hl){ _th.level=hl; _th.grow=0.4; } }
     const ox=Math.round(S.vw/2 - S.cam.x*z), oy=Math.round(S.vh/2 - S.cam.y*z);
 
-    /* tiles */
-    const x0=Math.max(0,Math.floor(-ox/z/TS)), x1=Math.min(MW,Math.ceil((S.vw-ox)/z/TS));
-    const y0=Math.max(0,Math.floor(-oy/z/TS)), y1=Math.min(MH,Math.ceil((S.vh-oy)/z/TS));
+    /* tiles. Bounds are the viewport, not the board: outside 34x29 the terrain
+       is generated on the fly so the ground runs to every edge of the canvas. */
+    const x0=Math.floor(-ox/z/TS), x1=Math.ceil((S.vw-ox)/z/TS);
+    const y0=Math.floor(-oy/z/TS), y1=Math.ceil((S.vh-oy)/z/TS);
     /* two cached atlases in flight, one comparison per tile picks between them */
     const TA=themeTiles(eLo), TB=themeTiles(eHi);
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-      const k=map[y][x], v=vmap[y][x];
-      ctx.drawImage((sFrac>tmap[y][x]?TB:TA)[k][v], ox+x*TS*z, oy+y*TS*z, TS*z, TS*z);
+      let k,tv,v;
+      if(x>=0&&x<MW&&y>=0&&y<MH){ k=map[y][x]; tv=tmap[y][x]; v=vmap[y][x]; }
+      else { const o=outskirt(x,y); k=o.k; tv=o.t; v=o.v; }
+      ctx.drawImage((sFrac>tv?TB:TA)[k][v], ox+x*TS*z, oy+y*TS*z, TS*z, TS*z);
     }
 
     /* depth-sorted entities */
