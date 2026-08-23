@@ -2,6 +2,27 @@
 
 **Read this first, then `README.md` for the API.**
 
+## Taking these changes
+
+`leo-aesthetics` is where the visual work happens, and it forks from an older `main`.
+Do not merge it directly: it predates the cat runtime, the GitHub source links and the
+pan-first navigation, so merging it reverts them.
+
+Take **`leo-aesthetics-ui`** instead. It is the same visual work replayed onto current
+`main` with those conflicts already resolved in `main`'s favour, so it merges clean and
+touches nothing outside the renderer:
+
+```
+git fetch origin
+git merge origin/leo-aesthetics-ui
+```
+
+Six files, all renderer or renderer-facing. Nothing in `server/`, `contracts/`,
+`packages/` or `src/agents/`. The only non-visual line is `readSecurity()` in
+`src/integration/mistral-city.ts`, which is additive and inert until `CityModel` grows a
+`city.security.score`. That one number is still the whole ask, and it is written up in
+`README.md`.
+
 ## What this is
 
 The visual layer for Mistral City: a codebase rendered as a top-down pixel town where agents
